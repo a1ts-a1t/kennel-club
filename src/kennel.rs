@@ -1,11 +1,11 @@
 use std::ops::IndexMut;
 
 use itertools::{Itertools, multizip, zip_eq};
-use rand::Rng;
+use rand::{distr::{Distribution, Uniform}, Rng};
 use serde::Serialize;
 
 use crate::{
-    creature::{Creature, CreatureState},
+    creature::{Creature, CreatureMetadata, CreatureState},
     quadratic::{self, solve_quadratic},
     vec::Vec2,
 };
@@ -15,7 +15,7 @@ pub struct KennelMetadata {
     width: f64,
     height: f64,
     creature_radius: f64, // half the side length of a creature collision box
-    creature_count: u8,
+    creature_count: usize,
 }
 
 struct CollisionLattice {
@@ -23,10 +23,12 @@ struct CollisionLattice {
     height: usize,
     lattice_distance: f64, // the distance between points on a lattice (horizontally or vertically)
     grid: Box<[Box<[Option<Vec<Vec2>>]>]>,
+    count: usize,
 }
 
 impl CollisionLattice {
     pub fn add(&mut self, position: Vec2) {
+        self.count += 1;
         let x_idx = (position.x / self.lattice_distance).floor() as usize;
         let y_idx = (position.y / self.lattice_distance).floor() as usize;
 
@@ -111,15 +113,16 @@ impl CollisionLattice {
 
 impl From<&KennelMetadata> for CollisionLattice {
     fn from(metadata: &KennelMetadata) -> Self {
-        let creature_size = 2f64 * metadata.creature_radius;
-        let width = (metadata.width / creature_size).floor() as usize;
-        let height = (metadata.height / creature_size).floor() as usize;
+        let hitbox_size = 2f64 * metadata.creature_radius;
+        let width = (metadata.width / hitbox_size).floor() as usize;
+        let height = (metadata.height / hitbox_size).floor() as usize;
         let grid = vec![vec![None; height].into_boxed_slice(); width].into_boxed_slice();
         CollisionLattice {
             width,
             height,
-            lattice_distance: creature_size,
+            lattice_distance: hitbox_size,
             grid,
+            count: 0,
         }
     }
 }
@@ -152,7 +155,7 @@ fn resolve_creature_collision(
         quadratic::RealQuadraticRoots::Double(root, _) if root > 0f64 && root < 1f64 => root,
         quadratic::RealQuadraticRoots::Double(_, root) if root > 0f64 && root < 1f64 => root,
         quadratic::RealQuadraticRoots::Single(root) if root > 0f64 && root < 1f64 => root,
-        _ => 0f64,
+        _ => 0f64, // this shouldn't happen, but if it does, default to zero
     };
 
     Some(Vec2 {
@@ -255,8 +258,35 @@ fn resolve_collisions(
 }
 
 impl Kennel {
-    pub fn new() -> Kennel {
-        todo!("Blue noise initialization");
+    pub fn new<R: Rng + ?Sized>(rng: &mut R, creature_metadatas: Vec<CreatureMetadata>, metadata: KennelMetadata) -> Kennel {
+        // ok, we're doing dart throwing. don't be mad at me.
+        // i want unbiased non-maximal coverage so that rules 
+        // out Bridson's algorithm, and realistically, n should 
+        // always be small enough (wrt kennel size) that this 
+        // isn't really a problem.
+        // if it is, we'll tackle it when we get there
+
+        let mut collision_lattice = CollisionLattice::from(&metadata);
+        let distr_x = Uniform::new(0f64, metadata.width).unwrap();
+        let distr_y = Uniform::new(0f64, metadata.height).unwrap();
+        let desired_squared_norm = 4f64 * metadata.creature_radius * metadata.creature_radius;
+        while collision_lattice.count < metadata.creature_count {
+            let test_position = Vec2 { x: rng.sample(distr_x), y: rng.sample(distr_y) };
+            let has_collision = collision_lattice.get_collision_candidates(&test_position)
+                .iter()
+                .any(|candidate_position| (&test_position - candidate_position).squared_norm() < desired_squared_norm);
+
+            if !has_collision {
+                collision_lattice.add(test_position);
+            }
+        }
+
+        let positions = collision_lattice.as_vec();
+        let creatures: Vec<_> = zip_eq(creature_metadatas, positions)
+            .map(|(creature_metadata, position)| Creature { metadata: creature_metadata, position, state: rng.random() })
+            .collect();
+
+        Kennel { metadata, creatures }
     }
 
     pub fn next<R: Rng + ?Sized>(self, rng: &mut R) -> Kennel {
