@@ -1,8 +1,7 @@
 mod quadtree;
 mod creature;
 mod kennel;
-mod quadratic;
-mod vec;
+mod math;
 
 fn main() {
     println!("Hello, world!");

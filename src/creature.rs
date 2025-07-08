@@ -1,12 +1,10 @@
-use crate::vec::Vec2;
 use rand::{
     Rng,
-    distr::{
-        Distribution, StandardUniform,
-        weighted::{Weight, WeightedIndex},
-    },
+    distr::{Distribution, StandardUniform, weighted::WeightedIndex},
 };
 use serde::Serialize;
+
+use crate::math::Vec2;
 
 #[derive(Serialize, Clone)]
 #[serde(tag = "type")]
@@ -36,7 +34,7 @@ impl CreatureState {
 
     pub fn next<R: Rng + ?Sized>(&self, rng: &mut R) -> CreatureState {
         let weights = self.weights();
-        let distr = WeightedIndex::new(&weights).unwrap();
+        let distr = WeightedIndex::new(weights).unwrap();
         let index = rng.sample(distr);
 
         match self {
@@ -51,7 +49,7 @@ impl CreatureState {
         }
     }
 
-    #[cfg_attr(rustfmt, rustfmt_skip)]
+    #[rustfmt::skip]
     fn weights(&self) -> [u8; 4] {
         match self {
             CreatureState::Idle(_) =>   [75, 15,  5,  5],
