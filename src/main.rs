@@ -1,5 +1,6 @@
 mod creature;
 mod kennel;
+mod quadratic;
 mod vec;
 
 fn main() {
