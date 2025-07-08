@@ -18,7 +18,9 @@ impl Sub for &Vec2 {
     type Output = Vec2;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        Vec2 { x: self.x - rhs.x, y: self.y - rhs.y }
+        Vec2 {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+        }
     }
 }
-

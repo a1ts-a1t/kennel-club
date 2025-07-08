@@ -1,6 +1,12 @@
-use rand::{distr::{weighted::{Weight, WeightedIndex}, Distribution, StandardUniform}, Rng};
-use serde::Serialize;
 use crate::vec::Vec2;
+use rand::{
+    Rng,
+    distr::{
+        Distribution, StandardUniform,
+        weighted::{Weight, WeightedIndex},
+    },
+};
+use serde::Serialize;
 
 #[derive(Serialize, Clone)]
 #[serde(tag = "type")]
@@ -32,7 +38,7 @@ impl CreatureState {
         let weights = self.weights();
         let distr = WeightedIndex::new(&weights).unwrap();
         let index = rng.sample(distr);
-        
+
         match self {
             CreatureState::Idle(duration) if index == 0 => CreatureState::Idle(duration + 1),
             CreatureState::Sleep(duration) if index == 1 => CreatureState::Sleep(duration + 1),
@@ -45,6 +51,7 @@ impl CreatureState {
         }
     }
 
+    #[cfg_attr(rustfmt, rustfmt_skip)]
     fn weights(&self) -> [u8; 4] {
         match self {
             CreatureState::Idle(_) =>   [75, 15,  5,  5],
@@ -68,4 +75,3 @@ pub struct Creature {
     pub position: Vec2,
     pub state: CreatureState,
 }
-
