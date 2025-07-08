@@ -28,6 +28,9 @@ impl Sub for &Vec2 {
         }
     }
 }
+
+impl Eq for Vec2 {}
+
 pub enum RealQuadraticRoots {
     Double(f64, f64),
     Single(f64),

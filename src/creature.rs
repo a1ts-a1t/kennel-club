@@ -6,7 +6,7 @@ use serde::Serialize;
 
 use crate::math::Vec2;
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone, PartialEq, Eq)]
 #[serde(tag = "type")]
 pub enum CreatureState {
     Idle(u8),
@@ -60,14 +60,14 @@ impl CreatureState {
     }
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone, PartialEq, Eq)]
 pub struct CreatureMetadata {
     display_name: String,
     url: String,
     // TODO: sprite data?
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone, PartialEq, Eq)]
 pub struct Creature {
     pub metadata: CreatureMetadata,
     pub position: Vec2,
