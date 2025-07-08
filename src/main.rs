@@ -1,3 +1,4 @@
+mod quadtree;
 mod creature;
 mod kennel;
 mod quadratic;
