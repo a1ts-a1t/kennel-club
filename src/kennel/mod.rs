@@ -8,10 +8,9 @@ use serde::Serialize;
 
 use crate::{
     creature::{Creature, CreatureMetadata, CreatureState},
-    kennel::collision_lattice::CollisionLattice,
-    kennel::collision_resolvers::resolve_collisions,
-    kennel::metadata::KennelMetadata,
+    kennel::{collision_lattice::CollisionLattice, collision_resolvers::resolve_collisions, metadata::KennelMetadata},
     math::Vec2,
+    quadtree::Quadtree,
 };
 
 #[derive(Serialize, Clone)]
@@ -74,12 +73,19 @@ impl Kennel {
             .map(|c| (&c.state, &c.position, &c.metadata))
             .multiunzip();
 
+        let quadtree = Quadtree::from_data(&positions, self.metadata.width, self.metadata.height);
         let (new_states, new_positions): (Vec<_>, Vec<_>) = zip_eq(&states, &positions)
             .map(|(state, position)| {
                 let new_state = state.next(rng);
                 let new_position = match &new_state {
-                    CreatureState::Flee(_) => todo!(),
-                    CreatureState::Follow(_) => todo!(),
+                    CreatureState::Flee(_) => match quadtree.get_closest(position) {
+                        Some(closest_position) => self.metadata.step_size * (*position - &closest_position).normalize(),
+                        None => self.metadata.step_size * rng.random::<Vec2>(),
+                    },
+                    CreatureState::Follow(_) => match quadtree.get_closest(position) {
+                        Some(closest_position) => self.metadata.step_size * (&closest_position - *position).normalize(),
+                        None => self.metadata.step_size * rng.random::<Vec2>(),
+                    },
                     _ => (*position).clone(),
                 };
                 (new_state, new_position)

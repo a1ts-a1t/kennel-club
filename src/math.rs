@@ -1,6 +1,8 @@
+use rand::distr::{Distribution, StandardUniform, Uniform};
 use serde::Serialize;
 use std::cmp::Ordering;
-use std::ops::Sub;
+use std::f64::consts::PI;
+use std::ops::{Mul, Sub};
 
 #[derive(Serialize, Clone, PartialEq)]
 pub struct Vec2 {
@@ -16,6 +18,14 @@ impl Vec2 {
     pub fn dot(vec1: &Self, vec2: &Self) -> f64 {
         vec1.x * vec2.x + vec1.y * vec2.y
     }
+
+    pub fn normalize(self) -> Self {
+        let norm = Vec2::squared_norm(&self).sqrt();
+        Vec2 {
+            x: self.x / norm,
+            y: self.y / norm,
+        }
+    }
 }
 
 impl Sub for &Vec2 {
@@ -26,6 +36,26 @@ impl Sub for &Vec2 {
             x: self.x - rhs.x,
             y: self.y - rhs.y,
         }
+    }
+}
+
+impl Mul<Vec2> for f64 {
+    type Output = Vec2;
+
+    fn mul(self, rhs: Vec2) -> Self::Output {
+        Vec2 {
+            x: self * rhs.x,
+            y: self * rhs.y,
+        }
+    }
+}
+
+impl Distribution<Vec2> for StandardUniform {
+    // random unit vector
+    fn sample<R: rand::Rng + ?Sized>(&self, rng: &mut R) -> Vec2 {
+        let dist = Uniform::new(0f64, 2f64 * PI).unwrap();
+        let theta = rng.sample(dist);
+        Vec2 { x: theta.cos(), y: theta.sin() }
     }
 }
 

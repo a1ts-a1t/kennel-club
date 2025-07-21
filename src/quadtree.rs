@@ -38,13 +38,13 @@ enum Node {
         x_bounds: (f64, f64),
         y_bounds: (f64, f64),
         children: [NodeId; 4],
-        creature: Creature,
+        data: Vec2,
     },
     Leaf {
         // terminal nodes that have associated data
         x_bounds: (f64, f64),
         y_bounds: (f64, f64),
-        creature: Creature,
+        data: Vec2,
     },
     Spatial {
         // terminal nodes that do not have associated data
@@ -70,10 +70,10 @@ impl Node {
         }
     }
 
-    fn creature(&self) -> Option<Creature> {
+    fn data(&self) -> Option<Vec2> {
         match self {
-            Node::Internal { creature, .. } => Some(creature.clone()),
-            Node::Leaf { creature, .. } => Some(creature.clone()),
+            Node::Internal { data, .. } => Some(data.clone()),
+            Node::Leaf { data, .. } => Some(data.clone()),
             Node::Spatial { .. } => None,
         }
     }
@@ -125,7 +125,7 @@ pub fn get_quadrant(x_bounds: &(f64, f64), y_bounds: &(f64, f64), position: &Vec
 #[derive(PartialEq)]
 enum QueriedSpatialElement {
     Spatial { distance: f64, node: Node },
-    Creature { distance: f64, creature: Creature },
+    Data { distance: f64, data: Vec2 },
 }
 
 impl QueriedSpatialElement {
@@ -141,25 +141,25 @@ impl QueriedSpatialElement {
                     node: node.clone(),
                 })
             }
-            Node::Leaf { creature, .. } => Some(QueriedSpatialElement::Creature {
-                distance: (&creature.position - query).squared_norm(),
-                creature: creature.clone(),
+            Node::Leaf { data, .. } => Some(QueriedSpatialElement::Data {
+                distance: (data - query).squared_norm(),
+                data: data.clone(),
             }),
             Node::Spatial { .. } => None,
         }
     }
 
-    fn from_creature(creature: &Creature, query: &Vec2) -> Self {
-        QueriedSpatialElement::Creature {
-            distance: (&creature.position - query).squared_norm(),
-            creature: creature.clone(),
+    fn from_data(data: &Vec2, query: &Vec2) -> Self {
+        QueriedSpatialElement::Data {
+            distance: (data - query).squared_norm(),
+            data: data.clone(),
         }
     }
 
     fn distance(&self) -> f64 {
         match self {
             QueriedSpatialElement::Spatial { distance, .. } => *distance,
-            QueriedSpatialElement::Creature { distance, .. } => *distance,
+            QueriedSpatialElement::Data { distance, .. } => *distance,
         }
     }
 }
@@ -178,57 +178,65 @@ impl Ord for QueriedSpatialElement {
     }
 }
 
-struct CreatureQuadtree {
+pub struct Quadtree {
     nodes: Vec<Node>,
     width: f64,
     height: f64,
 }
 
-impl CreatureQuadtree {
+impl Quadtree {
     pub fn new(width: f64, height: f64) -> Self {
-        CreatureQuadtree {
+        Quadtree {
             nodes: vec![],
             width,
             height,
         }
     }
 
-    pub fn add(&mut self, creature: Creature) {
+    pub fn from_data(data: &Vec<&Vec2>, width: f64, height: f64) -> Self {
+        let mut quadtree = Quadtree::new(width, height);
+        for v in data {
+            quadtree.add(v.clone());
+        }
+        quadtree
+    }
+
+    pub fn add(&mut self, data: Vec2) {
         if self.nodes.is_empty() {
             let node = Node::Leaf {
                 x_bounds: (0f64, self.width),
                 y_bounds: (0f64, self.height),
-                creature,
+                data,
             };
             self.nodes.push(node);
             return;
         }
 
-        self.insert_at(creature, 0);
+        self.insert_at(data, 0);
     }
 
-    fn insert_at(&mut self, creature: Creature, parent_id: usize) {
+    fn insert_at(&mut self, data: Vec2, parent_id: usize) {
         match &self.nodes.get(parent_id).unwrap() {
             Node::Internal {
                 x_bounds,
                 y_bounds,
                 children,
                 ..
-            } => match get_quadrant(x_bounds, y_bounds, &creature.position) {
+            } => match get_quadrant(x_bounds, y_bounds, &data) {
                 NodeQuadrant::NE => self.insert_at(
-                    creature,
+                    data,
                     children[<NodeQuadrant as Into<usize>>::into(NodeQuadrant::NE)],
                 ),
                 NodeQuadrant::NW => self.insert_at(
-                    creature,
+                    data,
                     children[<NodeQuadrant as Into<usize>>::into(NodeQuadrant::NW)],
                 ),
                 NodeQuadrant::SW => self.insert_at(
-                    creature,
+                    data,
                     children[<NodeQuadrant as Into<usize>>::into(NodeQuadrant::SW)],
                 ),
                 NodeQuadrant::SE => self.insert_at(
-                    creature,
+                    data,
                     children[<NodeQuadrant as Into<usize>>::into(NodeQuadrant::SE)],
                 ),
             },
@@ -237,7 +245,7 @@ impl CreatureQuadtree {
                 let new_leaf = Node::Leaf {
                     x_bounds: *x_bounds,
                     y_bounds: *y_bounds,
-                    creature,
+                    data,
                 };
 
                 let _ = std::mem::replace(&mut self.nodes[parent_id], new_leaf);
@@ -245,16 +253,16 @@ impl CreatureQuadtree {
             Node::Leaf {
                 x_bounds,
                 y_bounds,
-                creature: parent_creature,
+                data: parent_data,
             } => {
                 // create the children of what will become the parent node
                 let mut children = create_quadrants(x_bounds, y_bounds);
                 let replace_idx: usize =
-                    get_quadrant(x_bounds, y_bounds, &creature.position).into();
+                    get_quadrant(x_bounds, y_bounds, &data).into();
                 let leaf = Node::Leaf {
                     x_bounds: children[replace_idx].x_bounds(),
                     y_bounds: children[replace_idx].y_bounds(),
-                    creature,
+                    data,
                 };
                 children[replace_idx] = leaf;
 
@@ -269,7 +277,7 @@ impl CreatureQuadtree {
                         base_idx + <NodeQuadrant as Into<usize>>::into(NodeQuadrant::SW),
                         base_idx + <NodeQuadrant as Into<usize>>::into(NodeQuadrant::SE),
                     ],
-                    creature: parent_creature.clone(),
+                    data: parent_data.clone(),
                 };
                 let _ = std::mem::replace(&mut self.nodes[parent_id], new_parent);
 
@@ -281,7 +289,7 @@ impl CreatureQuadtree {
         }
     }
 
-    pub fn get_closest(&self, query: &Vec2) -> Option<Creature> {
+    pub fn get_closest(&self, query: &Vec2) -> Option<Vec2> {
         if self.nodes.is_empty() {
             return None;
         }
@@ -294,8 +302,8 @@ impl CreatureQuadtree {
                 QueriedSpatialElement::Spatial { node, .. }
                     if matches!(node, Node::Internal { .. }) =>
                 {
-                    priority_queue.push(QueriedSpatialElement::from_creature(
-                        &node.creature().unwrap(),
+                    priority_queue.push(QueriedSpatialElement::from_data(
+                        &node.data().unwrap(),
                         query,
                     ));
                     node.children()
@@ -307,8 +315,8 @@ impl CreatureQuadtree {
                         .filter_map(identity)
                         .for_each(|e| priority_queue.push(e));
                 }
-                QueriedSpatialElement::Creature { creature, .. } if creature.position != *query => {
-                    return Some(creature);
+                QueriedSpatialElement::Data { data, .. } if data != *query => {
+                    return Some(data);
                 }
                 _ => (),
             };
