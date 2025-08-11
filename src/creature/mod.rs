@@ -4,13 +4,13 @@ pub use state::{State, StateType};
 
 use crate::{
     collidable::Collidable,
-    vec2::{Position, Vec2},
+    math::Vec2
 };
 
 mod metadatum;
 mod state;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Creature {
     pub state: State,
     // sprite: String, // some combination of sprite sheet metadata and state duration
@@ -27,7 +27,7 @@ impl Creature {
      */
     pub fn from_metadatum<R: Rng + ?Sized>(metadatum: Metadatum, rng: &mut R) -> Self {
         let state: State = StateType::random(rng).into();
-        let position: Position = (rng.random::<f64>(), rng.random::<f64>()).into();
+        let position: Vec2 = (rng.random::<f64>(), rng.random::<f64>()).into();
         let collidable = Collidable::new(position, metadatum.radius);
         Creature {
             state,
@@ -37,15 +37,15 @@ impl Creature {
     }
 
     /**
-     * Computes the next state (randomly) for the creature and consumes it.
+     * Computes the next state (randomly) for the creature.
      * DOES NOT REPOSITION THE CREATURE. THE COLLIDABLE DOES NOT CHANGE.
      */
-    pub fn next_state<R: Rng + ?Sized>(self, rng: &mut R) -> Self {
+    pub fn next_state<R: Rng + ?Sized>(&self, rng: &mut R) -> Self {
         let next_state = self.state.next(rng);
-        Creature { 
+        Creature {
             state: next_state,
-            collidable: self.collidable,
-            metadatum: self.metadatum,
+            collidable: self.collidable.clone(),
+            metadatum: self.metadatum.clone(),
         }
     }
 
@@ -61,7 +61,7 @@ impl Creature {
         }
     }
 
-    pub fn position(&self) -> Position {
+    pub fn position(&self) -> Vec2 {
         self.collidable.position.clone()
     }
 }

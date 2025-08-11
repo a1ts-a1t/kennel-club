@@ -1,4 +1,7 @@
-use std::{fmt::Display, ops::{Add, Div, Mul, Sub}};
+use std::{
+    cmp,
+    ops::{Add, Div, Mul, Sub},
+};
 
 #[derive(Clone, Debug)]
 pub struct Vec2 {
@@ -19,7 +22,10 @@ impl Add for &Vec2 {
     type Output = Vec2;
 
     fn add(self, rhs: Self) -> Self::Output {
-        Vec2 { x: self.x + rhs.x, y: self.y + rhs.y }
+        Vec2 {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+        }
     }
 }
 
@@ -27,7 +33,10 @@ impl Add for Vec2 {
     type Output = Vec2;
 
     fn add(self, rhs: Self) -> Self::Output {
-        Vec2 { x: self.x + rhs.x, y: self.y + rhs.y }
+        Vec2 {
+            x: self.x + rhs.x,
+            y: self.y + rhs.y,
+        }
     }
 }
 
@@ -46,7 +55,10 @@ impl Mul<&Vec2> for f64 {
     type Output = Vec2;
 
     fn mul(self, rhs: &Vec2) -> Self::Output {
-        Vec2 { x: self * rhs.x, y: self * rhs.y }
+        Vec2 {
+            x: self * rhs.x,
+            y: self * rhs.y,
+        }
     }
 }
 
@@ -54,7 +66,10 @@ impl Mul<&Vec2> for &f64 {
     type Output = Vec2;
 
     fn mul(self, rhs: &Vec2) -> Self::Output {
-        Vec2 { x: self * rhs.x, y: self * rhs.y }
+        Vec2 {
+            x: self * rhs.x,
+            y: self * rhs.y,
+        }
     }
 }
 
@@ -62,13 +77,20 @@ impl Div<f64> for &Vec2 {
     type Output = Vec2;
 
     fn div(self, rhs: f64) -> Self::Output {
-        Vec2 { x: self.x / rhs, y: self.y / rhs }
+        Vec2 {
+            x: self.x / rhs,
+            y: self.y / rhs,
+        }
     }
 }
 
 impl Vec2 {
     pub fn squared_norm(&self) -> f64 {
         self.x * self.x + self.y * self.y
+    }
+
+    pub fn norm(&self) -> f64 {
+        self.squared_norm().sqrt()
     }
 
     pub fn zero() -> Self {
@@ -90,5 +112,3 @@ impl Vec2 {
     }
 }
 
-pub type Position = Vec2;
-pub type Delta = Vec2;

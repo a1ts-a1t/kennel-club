@@ -1,4 +1,4 @@
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Metadatum {
     pub id: String,
     pub step_size: f64,

@@ -7,11 +7,10 @@ use termion::terminal_size;
 use crate::collidable::Collidable;
 use crate::creature::Creature;
 use crate::creature::Metadatum;
+use crate::creature::StateType;
 use crate::step;
 use crate::step::Step;
-use crate::vec2::Position;
-use crate::vec2::Vec2;
-use crate::creature::StateType;
+use crate::math::Vec2;
 
 pub struct Kennel {
     width: f64,
@@ -68,7 +67,7 @@ impl Kennel {
             }
 
             let random_collidable = |_| {
-                let position: Position = (
+                let position: Vec2 = (
                     random_noninclusive(radius, width - radius, rng),
                     random_noninclusive(radius, height - radius, rng),
                 )
@@ -105,20 +104,25 @@ impl Kennel {
         })
     }
 
-    pub fn center_of_mass(&self) -> Position {
-        let weighted_position_sum = self.creatures
+    pub fn center_of_mass(&self) -> Vec2 {
+        let weighted_position_sum = self
+            .creatures
             .iter()
             .map(|creature| &creature.collidable.radius * &creature.collidable.position)
             .reduce(|acc, e| acc + e);
 
-        let weight_sum = self.creatures
+        let weight_sum = self
+            .creatures
             .iter()
             .map(|creature| creature.collidable.radius)
             .reduce(|acc, e| acc + e);
 
         match (weighted_position_sum, weight_sum) {
             (Some(n), Some(d)) => &n / d,
-            _ => Vec2 { x: self.width  / 2.0, y: self.height / 2.0 },
+            _ => Vec2 {
+                x: self.width / 2.0,
+                y: self.height / 2.0,
+            },
         }
     }
 
@@ -128,13 +132,15 @@ impl Kennel {
      * This moves each creature forward a time step
      * and de-collides them.
      */
-    pub fn next<R: Rng + ?Sized>(self, rng: &mut R) -> Result<Self, ()> {
+    pub fn next<R: Rng + ?Sized>(&self, rng: &mut R) -> Result<Self, String> {
         // get the new states of all creatures
         let center_of_mass = self.center_of_mass();
         let x_bounds = (0.0, self.width);
         let y_bounds = (0.0, self.height);
 
-        let new_creatures: Vec<_> =  self.creatures.into_iter()
+        let new_creatures: Vec<_> = self
+            .creatures
+            .iter()
             .map(|creature| creature.next_state(rng))
             .collect();
 
@@ -143,31 +149,27 @@ impl Kennel {
             match creature.state.state_type {
                 StateType::Follow => {
                     let delta = &center_of_mass - &collidable.position;
-                    Step::new(
-                        collidable, 
-                        delta.with_norm(creature.metadatum.step_size)
-                    )
+                    Step::new(collidable, delta.with_norm(creature.metadatum.step_size))
                 }
                 StateType::Flee => {
                     let delta = &collidable.position - &center_of_mass;
-                    Step::new(
-                        collidable, 
-                        delta.with_norm(creature.metadatum.step_size)
-                    )
+                    Step::new(collidable, delta.with_norm(creature.metadatum.step_size))
                 }
                 _ => Step::new(collidable, Vec2::zero()),
             }
         };
 
         // create new steps and resolve to bounds
-        let mut steps: Vec<Step> = vec!();
+        let mut steps: Vec<Step> = vec![];
         for creature in new_creatures.iter() {
             let unresolved_step = to_step(creature);
             let resolution_result = unresolved_step.resolve_to_bounds(&x_bounds, &y_bounds);
             match resolution_result {
                 step::ResolutionResult::Ok => steps.push(unresolved_step),
                 step::ResolutionResult::ResolvedTo(step) => steps.push(step),
-                step::ResolutionResult::Err => return Err(()),
+                step::ResolutionResult::Err => {
+                    return Err(format!("Out of bounds: ({:?})", creature.collidable));
+                }
             }
         }
 
@@ -186,13 +188,18 @@ impl Kennel {
                 step::ResolutionResult::ResolvedTo((resolved_step_i, resolved_step_j)) => {
                     steps[i] = resolved_step_i;
                     steps[j] = resolved_step_j;
-                },
-                step::ResolutionResult::Err => return Err(()),
+                }
+                step::ResolutionResult::Err => {
+                    return Err(format!(
+                        "Unresolved collision: ({:?},{:?})",
+                        step_i.collidable, step_j.collidable
+                    ));
+                }
             };
         }
 
         let repositioned_creatures: Vec<_> = zip(new_creatures, steps)
-            .map(|(creature, step)| creature.reposition(step.collapse().position)   )
+            .map(|(creature, step)| creature.reposition(step.collapse().position))
             .collect();
 
         Ok(Kennel {
@@ -209,7 +216,7 @@ impl Kennel {
     pub fn resize(&self, width: f64, height: f64) -> Self {
         todo!();
     }
-    
+
     /**
      * Prints the kennel out to the terminal.
      * Each terminal cell represents a chunk of the kennel.
@@ -285,11 +292,6 @@ mod tests {
                 collidable_combination.get(1).unwrap(),
             );
             if c1.is_colliding(c2) {
-                let position_diff = &c1.position - &c2.position;
-                println!("Collidable1: [{:?}]", c1);
-                println!("Collidable2: [{:?}]", c2);
-                println!("PositionDiff: [{:?}]", position_diff);
-                println!("Diff squared norm: [{}]", position_diff.squared_norm());
                 panic!("Pairwise collision found during initialization");
             }
         }

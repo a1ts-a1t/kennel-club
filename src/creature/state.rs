@@ -1,6 +1,6 @@
-use rand::{distr::weighted::WeightedIndex, Rng};
+use rand::{Rng, distr::weighted::WeightedIndex};
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum StateType {
     Idle,
     Sleep,
@@ -38,6 +38,9 @@ impl StateType {
         }
     }
 
+    /**
+     * TODO: can this be configured by users?
+     */
     #[rustfmt::skip]
     fn weights(&self) -> [u8; 4] {
         match self {
@@ -49,7 +52,7 @@ impl StateType {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct State {
     pub state_type: StateType,
     pub duration: u8,
@@ -57,12 +60,19 @@ pub struct State {
 
 impl State {
     /**
-     * Given a current state, compute the next one and consume this state
+     * Given a current state, compute the next one
      */
-    pub fn next<R: Rng + ?Sized>(self, rng: &mut R) -> Self {
+    pub fn next<R: Rng + ?Sized>(&self, rng: &mut R) -> Self {
         let next_state_type = self.state_type.next(rng);
-        let next_duration = if next_state_type == self.state_type { self.duration + 1 } else { 0 };
-        State { state_type: next_state_type, duration: next_duration }
+        let next_duration = if next_state_type == self.state_type {
+            self.duration + 1
+        } else {
+            0
+        };
+        State {
+            state_type: next_state_type,
+            duration: next_duration,
+        }
     }
 }
 
