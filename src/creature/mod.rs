@@ -2,10 +2,7 @@ pub use metadatum::Metadatum;
 use rand::Rng;
 pub use state::{State, StateType};
 
-use crate::{
-    collidable::Collidable,
-    math::Vec2
-};
+use crate::{math::Vec2, physics::Collidable};
 
 mod metadatum;
 mod state;

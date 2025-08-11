@@ -2,24 +2,26 @@ use std::{thread::sleep, time::Duration};
 
 use kennel::Kennel;
 
-mod collidable;
 mod creature;
 mod kennel;
-mod step;
 mod math;
+mod physics;
 
 fn main() {
     let mut rng = rand::rng();
-    let width = 64.0;
-    let height = 64.0;
-    let creature_metadata: Vec<_> = (0..16)
+    let creature_metadata: Vec<_> = (0..32)
         .into_iter()
-        .map(|idx| creature::Metadatum::new(format!("id{}", idx), 1.0, 1.0))
+        .map(|idx| creature::Metadatum::new(format!("id{}", idx), 0.5, 0.05))
         .collect();
-    let mut kennel = Kennel::new(width, height, creature_metadata, &mut rng).unwrap();
-    for _ in 0..20 {
+    let mut kennel = Kennel::new(creature_metadata, &mut rng).unwrap();
+
+    // I'm pretty sure there are issues with numerical imprecision stacking on itself
+    // but..... let's just integ test the hell out of it and call it a day :)
+    for i in 1..usize::MAX {
+        // kennel.pretty_print();
         kennel.print();
+        println!("Iteration {}", i);
         kennel = kennel.next(&mut rng).unwrap();
-        sleep(Duration::from_secs(2));
+        sleep(Duration::from_secs(1));
     }
 }

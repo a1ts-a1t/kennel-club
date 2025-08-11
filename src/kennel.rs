@@ -4,17 +4,13 @@ use itertools::Itertools;
 use rand::Rng;
 use termion::terminal_size;
 
-use crate::collidable::Collidable;
 use crate::creature::Creature;
 use crate::creature::Metadatum;
 use crate::creature::StateType;
-use crate::step;
-use crate::step::Step;
 use crate::math::Vec2;
+use crate::physics::{Collidable, Step, StepResolutionResult};
 
 pub struct Kennel {
-    width: f64,
-    height: f64,
     creatures: Vec<Creature>,
 }
 
@@ -43,8 +39,6 @@ impl Kennel {
      * I know dart throwing is not sexy, but give me a break, this is like. n=10 or something.
      */
     pub fn new<R: Rng + ?Sized>(
-        width: f64,
-        height: f64,
         creature_metadata: Vec<Metadatum>,
         rng: &mut R,
     ) -> Result<Self, String> {
@@ -59,7 +53,7 @@ impl Kennel {
         while let Some(current_creature) = unpositioned_creatures.next() {
             let radius = current_creature.metadatum.radius;
             let diameter = radius * 2.0;
-            if diameter >= width || diameter >= height {
+            if diameter > 1.0 {
                 return Err(format!(
                     "Creature {} has radius {} and is too large for the kennel size.",
                     current_creature.metadatum.id, radius
@@ -68,8 +62,8 @@ impl Kennel {
 
             let random_collidable = |_| {
                 let position: Vec2 = (
-                    random_noninclusive(radius, width - radius, rng),
-                    random_noninclusive(radius, height - radius, rng),
+                    random_noninclusive(radius, 1.0 - radius, rng),
+                    random_noninclusive(radius, 1.0 - radius, rng),
                 )
                     .into();
                 Collidable::new(position, radius)
@@ -98,8 +92,6 @@ impl Kennel {
         }
 
         Ok(Kennel {
-            width,
-            height,
             creatures: repositioned_creatures,
         })
     }
@@ -119,10 +111,7 @@ impl Kennel {
 
         match (weighted_position_sum, weight_sum) {
             (Some(n), Some(d)) => &n / d,
-            _ => Vec2 {
-                x: self.width / 2.0,
-                y: self.height / 2.0,
-            },
+            _ => Vec2 { x: 0.5, y: 0.5 },
         }
     }
 
@@ -135,8 +124,6 @@ impl Kennel {
     pub fn next<R: Rng + ?Sized>(&self, rng: &mut R) -> Result<Self, String> {
         // get the new states of all creatures
         let center_of_mass = self.center_of_mass();
-        let x_bounds = (0.0, self.width);
-        let y_bounds = (0.0, self.height);
 
         let new_creatures: Vec<_> = self
             .creatures
@@ -163,11 +150,11 @@ impl Kennel {
         let mut steps: Vec<Step> = vec![];
         for creature in new_creatures.iter() {
             let unresolved_step = to_step(creature);
-            let resolution_result = unresolved_step.resolve_to_bounds(&x_bounds, &y_bounds);
+            let resolution_result = unresolved_step.resolve_to_unit_bounds();
             match resolution_result {
-                step::ResolutionResult::Ok => steps.push(unresolved_step),
-                step::ResolutionResult::ResolvedTo(step) => steps.push(step),
-                step::ResolutionResult::Err => {
+                StepResolutionResult::Ok => steps.push(unresolved_step),
+                StepResolutionResult::ResolvedTo(step) => steps.push(step),
+                StepResolutionResult::Err => {
                     return Err(format!("Out of bounds: ({:?})", creature.collidable));
                 }
             }
@@ -177,25 +164,28 @@ impl Kennel {
         // I KNOW CHECKING ALL PAIRS IS NEITHER EFFICIENT NOR COOL
         // BUT AGAIN LIKE N<10
         // (something something muttering quadtree under my breath)
-        for idxs in (0..steps.len()).combinations(2) {
-            let (i, j) = (idxs[0], idxs[1]);
 
-            let step_i = steps.get(i).unwrap();
-            let step_j = steps.get(j).unwrap();
+        let mut recheck = true;
+        while recheck {
+            recheck = false;
+            for idxs in (0..steps.len()).combinations(2) {
+                let (i, j) = (idxs[0], idxs[1]);
 
-            match Step::resolve_steps(step_i, step_j) {
-                step::ResolutionResult::Ok => (),
-                step::ResolutionResult::ResolvedTo((resolved_step_i, resolved_step_j)) => {
-                    steps[i] = resolved_step_i;
-                    steps[j] = resolved_step_j;
-                }
-                step::ResolutionResult::Err => {
-                    return Err(format!(
-                        "Unresolved collision: ({:?},{:?})",
-                        step_i.collidable, step_j.collidable
-                    ));
-                }
-            };
+                let step_i = steps.get(i).unwrap();
+                let step_j = steps.get(j).unwrap();
+
+                match Step::resolve_steps(step_i, step_j) {
+                    StepResolutionResult::Ok => (),
+                    StepResolutionResult::ResolvedTo((resolved_step_i, resolved_step_j)) => {
+                        recheck = true;
+                        steps[i] = resolved_step_i;
+                        steps[j] = resolved_step_j;
+                    }
+                    StepResolutionResult::Err => {
+                        return Err(format!("Unresolved collision: ({:?},{:?})", step_i, step_j));
+                    }
+                };
+            }
         }
 
         let repositioned_creatures: Vec<_> = zip(new_creatures, steps)
@@ -203,18 +193,8 @@ impl Kennel {
             .collect();
 
         Ok(Kennel {
-            width: self.width,
-            height: self.height,
             creatures: repositioned_creatures,
         })
-    }
-
-    /**
-     * Returns a kennel that matches the specified width and height.
-     * scales positions for all creatures and scales collidable radii.
-     */
-    pub fn resize(&self, width: f64, height: f64) -> Self {
-        todo!();
     }
 
     /**
@@ -223,10 +203,10 @@ impl Kennel {
      * Each terminal cell will display the number of creatures in that cell.
      * If the number of creatures is greater than 9, it will display `+`.
      */
-    pub fn print(&self) -> () {
+    pub fn pretty_print(&self) -> () {
         let (screen_width, screen_height) = terminal_size().unwrap();
-        let cell_width = self.width / Into::<f64>::into(screen_width);
-        let cell_height = self.height / Into::<f64>::into(screen_height);
+        let cell_width = 1.0 / Into::<f64>::into(screen_width);
+        let cell_height = 1.0 / Into::<f64>::into(screen_height);
 
         // bucket the creatures by screen position
         // and count the number of creatures at each position
@@ -254,6 +234,19 @@ impl Kennel {
             }
         }
     }
+
+    pub fn print(&self) -> () {
+        print!("{esc}c", esc = 27 as char); // clear the screen
+        for creature in self.creatures.iter() {
+            println!(
+                "{:5}({:.3}, {:.3}) - {:?}",
+                creature.metadatum.id,
+                creature.position().x,
+                creature.position().y,
+                creature.state.state_type
+            );
+        }
+    }
 }
 
 #[cfg(test)]
@@ -267,7 +260,7 @@ mod tests {
     fn test_new_fail() {
         let mut rng = SmallRng::seed_from_u64(RNG_SEED);
         let metadatum = Metadatum::new("id".to_string(), 0.0, 100.0);
-        let kennel_result = Kennel::new(10.0, 10.0, vec![metadatum], &mut rng);
+        let kennel_result = Kennel::new(vec![metadatum], &mut rng);
         assert!(kennel_result.is_err());
     }
 
@@ -276,10 +269,10 @@ mod tests {
         let mut rng = SmallRng::seed_from_u64(RNG_SEED);
         let metadata: Vec<_> = (1..=10)
             .into_iter()
-            .map(|radius| Metadatum::new(format!("id{}", radius), 0.0, radius as f64))
+            .map(|radius| Metadatum::new(format!("id{}", radius), 0.0, (radius as f64) / 100.0))
             .collect();
 
-        let kennel = Kennel::new(500.0, 500.0, metadata, &mut rng).unwrap();
+        let kennel = Kennel::new(metadata, &mut rng).unwrap();
         let collidable_combinations = kennel
             .creatures
             .into_iter()

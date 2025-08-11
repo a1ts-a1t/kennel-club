@@ -1,7 +1,4 @@
-use std::{
-    cmp,
-    ops::{Add, Div, Mul, Sub},
-};
+use std::ops::{Add, Div, Mul, Sub};
 
 #[derive(Clone, Debug)]
 pub struct Vec2 {
@@ -111,4 +108,3 @@ impl Vec2 {
         v1.x * v2.x + v1.y * v2.y
     }
 }
-
