@@ -1,4 +1,4 @@
-use std::ops::Sub;
+use std::{fmt::Display, ops::Sub};
 
 #[derive(Clone, Debug)]
 pub struct Vec2 {
@@ -28,7 +28,7 @@ impl Sub for &Vec2 {
 
 impl Vec2 {
     pub fn squared_norm(&self) -> f64 {
-        self.x * self.x + self.y + self.y
+        self.x * self.x + self.y * self.y
     }
 }
 

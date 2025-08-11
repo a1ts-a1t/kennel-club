@@ -158,3 +158,49 @@ impl Kennel {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand::{SeedableRng, rngs::SmallRng};
+
+    static RNG_SEED: u64 = 1;
+
+    #[test]
+    fn test_new_fail() {
+        let mut rng = SmallRng::seed_from_u64(RNG_SEED);
+        let metadatum = Metadatum::new("id".to_string(), 0.0, 100.0);
+        let kennel_result = Kennel::new(10.0, 10.0, vec![metadatum], &mut rng);
+        assert!(kennel_result.is_err());
+    }
+
+    #[test]
+    fn test_new_collisions() {
+        let mut rng = SmallRng::seed_from_u64(RNG_SEED);
+        let metadata: Vec<_> = (1..=10)
+            .into_iter()
+            .map(|radius| Metadatum::new(format!("id{}", radius), 0.0, radius as f64))
+            .collect();
+
+        let kennel = Kennel::new(500.0, 500.0, metadata, &mut rng).unwrap();
+        let collidable_combinations = kennel
+            .creatures
+            .into_iter()
+            .map(|creature| creature.collidable)
+            .combinations(2);
+
+        for collidable_combination in collidable_combinations {
+            let (c1, c2) = (
+                collidable_combination.get(0).unwrap(),
+                collidable_combination.get(1).unwrap(),
+            );
+            if c1.is_colliding(c2) {
+                let position_diff = &c1.position - &c2.position;
+                println!("Collidable1: [{:?}]", c1);
+                println!("Collidable2: [{:?}]", c2);
+                println!("PositionDiff: [{:?}]", position_diff);
+                println!("Diff squared norm: [{}]", position_diff.squared_norm());
+                panic!("Pairwise collision found during initialization");
+            }
+        }
+    }
+}
