@@ -84,6 +84,10 @@ impl Vec2 {
         let scale = self.squared_norm().sqrt() * norm;
         scale * self
     }
+
+    pub fn dot(v1: &Self, v2: &Self) -> f64 {
+        v1.x * v2.x + v1.y * v2.y
+    }
 }
 
 pub type Position = Vec2;
