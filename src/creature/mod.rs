@@ -1,6 +1,6 @@
 pub use metadatum::Metadatum;
 use rand::Rng;
-use state::{State, StateType};
+pub use state::{State, StateType};
 
 use crate::{
     collidable::Collidable,
@@ -40,8 +40,13 @@ impl Creature {
      * Computes the next state (randomly) for the creature and consumes it.
      * DOES NOT REPOSITION THE CREATURE. THE COLLIDABLE DOES NOT CHANGE.
      */
-    pub fn next_state(self) -> Self {
-        todo!();
+    pub fn next_state<R: Rng + ?Sized>(self, rng: &mut R) -> Self {
+        let next_state = self.state.next(rng);
+        Creature { 
+            state: next_state,
+            collidable: self.collidable,
+            metadatum: self.metadatum,
+        }
     }
 
     /**

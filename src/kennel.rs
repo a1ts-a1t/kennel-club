@@ -1,3 +1,5 @@
+use std::iter::zip;
+
 use itertools::Itertools;
 use rand::Rng;
 use termion::terminal_size;
@@ -5,7 +7,11 @@ use termion::terminal_size;
 use crate::collidable::Collidable;
 use crate::creature::Creature;
 use crate::creature::Metadatum;
+use crate::step;
+use crate::step::Step;
 use crate::vec2::Position;
+use crate::vec2::Vec2;
+use crate::creature::StateType;
 
 pub struct Kennel {
     width: f64,
@@ -18,11 +24,16 @@ static MAX_INITIALIZATION_RETRIES: u8 = 32;
 /**
  * Returns a random non-inclusive value between low and high. That is
  * a uniformly distributed random value in (low, high)
+ *
+ * I KNOW THE DISTRIBUTION IS NOT TECHNICALLY UNIFORM
+ * I DON'T CARE
  */
 fn random_noninclusive<R: Rng + ?Sized>(low: f64, high: f64, rng: &mut R) -> f64 {
-    let val1 = rng.random_range(low..high);
-    let val2 = rng.random_range(-high..-low);
-    (val1 - val2) / 2.0
+    let val = rng.random_range(low..high);
+    if val == low {
+        return low.next_up();
+    }
+    val
 }
 
 impl Kennel {
@@ -94,21 +105,101 @@ impl Kennel {
         })
     }
 
+    pub fn center_of_mass(&self) -> Position {
+        let weighted_position_sum = self.creatures
+            .iter()
+            .map(|creature| &creature.collidable.radius * &creature.collidable.position)
+            .reduce(|acc, e| acc + e);
+
+        let weight_sum = self.creatures
+            .iter()
+            .map(|creature| creature.collidable.radius)
+            .reduce(|acc, e| acc + e);
+
+        match (weighted_position_sum, weight_sum) {
+            (Some(n), Some(d)) => &n / d,
+            _ => Vec2 { x: self.width  / 2.0, y: self.height / 2.0 },
+        }
+    }
+
     /**
      * Consumes the current kennel state and creates
      * a kennel that is in the next time state.
      * This moves each creature forward a time step
      * and de-collides them.
      */
-    pub fn next(self) -> Self {
+    pub fn next<R: Rng + ?Sized>(self, rng: &mut R) -> Result<Self, ()> {
         // get the new states of all creatures
-        //
-        // reposition all creatures
-        //
-        // resolve the collisions for all creatures
-        //
-        // recompute the center of mass of all creatures
-        todo!();
+        let center_of_mass = self.center_of_mass();
+        let x_bounds = (0.0, self.width);
+        let y_bounds = (0.0, self.height);
+
+        let new_creatures: Vec<_> =  self.creatures.into_iter()
+            .map(|creature| creature.next_state(rng))
+            .collect();
+
+        let to_step = |creature: &Creature| {
+            let collidable = creature.collidable.clone();
+            match creature.state.state_type {
+                StateType::Follow => {
+                    let delta = &center_of_mass - &collidable.position;
+                    Step::new(
+                        collidable, 
+                        delta.with_norm(creature.metadatum.step_size)
+                    )
+                }
+                StateType::Flee => {
+                    let delta = &collidable.position - &center_of_mass;
+                    Step::new(
+                        collidable, 
+                        delta.with_norm(creature.metadatum.step_size)
+                    )
+                }
+                _ => Step::new(collidable, Vec2::zero()),
+            }
+        };
+
+        // create new steps and resolve to bounds
+        let mut steps: Vec<Step> = vec!();
+        for creature in new_creatures.iter() {
+            let unresolved_step = to_step(creature);
+            let resolution_result = unresolved_step.resolve_to_bounds(&x_bounds, &y_bounds);
+            match resolution_result {
+                step::ResolutionResult::Ok => steps.push(unresolved_step),
+                step::ResolutionResult::ResolvedTo(step) => steps.push(step),
+                step::ResolutionResult::Err => return Err(()),
+            }
+        }
+
+        // resolve collisions between collidables
+        // I KNOW CHECKING ALL PAIRS IS NEITHER EFFICIENT NOR COOL
+        // BUT AGAIN LIKE N<10
+        // (something something muttering quadtree under my breath)
+        for idxs in (0..steps.len()).combinations(2) {
+            let (i, j) = (idxs[0], idxs[1]);
+
+            let step_i = steps.get(i).unwrap();
+            let step_j = steps.get(j).unwrap();
+
+            match Step::resolve_steps(step_i, step_j) {
+                step::ResolutionResult::Ok => (),
+                step::ResolutionResult::ResolvedTo((resolved_step_i, resolved_step_j)) => {
+                    steps[i] = resolved_step_i;
+                    steps[j] = resolved_step_j;
+                },
+                step::ResolutionResult::Err => return Err(()),
+            };
+        }
+
+        let repositioned_creatures: Vec<_> = zip(new_creatures, steps)
+            .map(|(creature, step)| creature.reposition(step.collapse().position)   )
+            .collect();
+
+        Ok(Kennel {
+            width: self.width,
+            height: self.height,
+            creatures: repositioned_creatures,
+        })
     }
 
     /**
@@ -118,7 +209,7 @@ impl Kennel {
     pub fn resize(&self, width: f64, height: f64) -> Self {
         todo!();
     }
-
+    
     /**
      * Prints the kennel out to the terminal.
      * Each terminal cell represents a chunk of the kennel.
