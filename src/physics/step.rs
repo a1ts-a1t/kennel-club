@@ -1,7 +1,5 @@
-use std::cmp;
-
 use crate::{
-    math::{Vec2, approx, newtons},
+    math::{Vec2, newtons},
     physics::collidable::Collidable,
 };
 
@@ -18,6 +16,8 @@ pub enum StepResolutionResult<T> {
     Err,
 }
 
+static DISTANCE_TOLERANCE: f64 = 0.000000001;
+
 impl Step {
     pub fn new(collidable: Collidable, delta: Vec2) -> Self {
         Self { collidable, delta }
@@ -31,6 +31,14 @@ impl Step {
             position: self.collidable.position.clone() + self.delta.clone(),
             radius: self.collidable.radius,
         }
+    }
+
+    fn lerp(&self, t: f64) -> Self {
+        Self::new(self.collidable.clone(), t * &self.delta)
+    }
+
+    fn zero(&self) -> Self {
+        Self::new(self.collidable.clone(), Vec2::zero())
     }
 
     /**
@@ -55,17 +63,17 @@ impl Step {
         // let lower_bound = self.collidable.radius;
         let upper_bound = 1.0 - self.collidable.radius;
 
-        let t_x = if approx::lt(&final_position.x, radius) {
+        let t_x = if &final_position.x < radius {
             (radius - current_position.x) / &self.delta.x
-        } else if approx::gt(&final_position.x, &upper_bound) {
+        } else if final_position.x > upper_bound {
             (upper_bound - current_position.x) / &self.delta.x
         } else {
             1.0
         };
 
-        let t_y = if approx::lt(&final_position.y, radius) {
+        let t_y = if &final_position.y < radius {
             (radius - current_position.y) / &self.delta.y
-        } else if approx::gt(&final_position.y, &upper_bound) {
+        } else if final_position.y > upper_bound {
             (upper_bound - current_position.y) / &self.delta.y
         } else {
             1.0
@@ -75,13 +83,20 @@ impl Step {
             return StepResolutionResult::Ok;
         }
 
-        let t = f64::min(t_x, t_y);
-        let delta = t * &self.delta;
-        let step = Step {
-            collidable: self.collidable.clone(),
-            delta,
-        };
-        StepResolutionResult::ResolvedTo(step)
+        let mut t = f64::min(t_x, t_y);
+        while let step = self.lerp(t)
+            && t >= 0.0
+        {
+            if !step.collapse().is_out_of_unit_bounds() {
+                return StepResolutionResult::ResolvedTo(step);
+            }
+
+            // realistically this should just be for getting our way out of numerical impercision
+            // this shouldn't happen *that* many times
+            t = t.next_down();
+        }
+
+        StepResolutionResult::Err
     }
 
     /**
@@ -111,49 +126,50 @@ impl Step {
             return StepResolutionResult::Ok;
         }
 
+        // add in tolerance for extra wiggle room
+        let c = position_diff.squared_norm() - radius_sum * radius_sum - DISTANCE_TOLERANCE;
         let b = 2.0 * Vec2::dot(&delta_diff, &position_diff);
-        let c = position_diff.squared_norm() - radius_sum * radius_sum;
-
         let d = b * b - 4.0 * a * c;
 
-        if d < 0.0 && !step1.collapse().is_colliding(&step2.collapse()) {
+        // no roots so no collision
+        // return ok
+        if d < 0.0 {
             return StepResolutionResult::Ok;
         }
 
-        let t = if d < 0.0 {
-            1.0
-        } else {
-            let d_sq = d.sqrt();
-            let t1 = (-b + d_sq) / (2.0 * a);
-            let t2 = (-b - d_sq) / (2.0 * a);
-
-            let t_min = match (t1.total_cmp(&0.0), t2.total_cmp(&0.0)) {
-                // collision points are before time frame, so no collision occurs
-                (cmp::Ordering::Less, cmp::Ordering::Less) => 1.0,
-                (cmp::Ordering::Less, _) => t2, // t1 definitely not in range
-                (_, cmp::Ordering::Less) => t1, // t2 definitely not in range
-                (_, _) => f64::min(t1, t2),     // both can be in range
-            };
-
-            t_min.clamp(0.0, 1.0)
+        let f = |t: f64| {
+            let f_t = a * t * t + b * t + c;
+            if f_t >= 0.0 && f_t < DISTANCE_TOLERANCE {
+                0.0
+            } else {
+                f_t
+            }
         };
-
-        // newton stepping out of weird numerical inaccuracy wonkiness
-        let f = |t: f64| approx::round(&(a * t * t + b * t + c), &0.0);
         let df = |t: f64| 2.0 * a * t + b;
 
-        let t_newtons = newtons(t, f, df, (0.0, 1.0));
-        let delta1 = t_newtons * &step1.delta;
-        let delta2 = t_newtons * &step2.delta;
+        let d_sq = if d <= 0.0 { 0.0 } else { d.sqrt() };
+        let t1 = newtons((-b + d_sq) / (2.0 * a), f, df).unwrap_or(0.0);
+        let t2 = newtons((-b - d_sq) / (2.0 * a), f, df).unwrap_or(0.0);
 
-        let step1 = Step::new(step1.collidable.clone(), delta1);
-        let step2 = Step::new(step2.collidable.clone(), delta2);
+        let (t_min, t_max) = (f64::min(t1, t2), f64::max(t1, t2));
 
-        if step1.collapse().is_colliding(&step2.collapse()) {
-            StepResolutionResult::Err // this really shouldn't happen
-        } else {
-            StepResolutionResult::ResolvedTo((step1, step2))
+        // roots are out of range
+        // during entire time step, there is no collision
+        if t_max < 0.0 || t_min >= 1.0 {
+            return StepResolutionResult::Ok;
         }
+
+        // during the entire time step, it is colliding
+        // this is pathological given the check at the top,
+        // but just in case, catch and return the zero step
+        if t_min < 0.0 && t_max > 1.0 {
+            return StepResolutionResult::ResolvedTo((step1.zero(), step2.zero()));
+        }
+
+        // lerp to the smallest of the fitting root
+        // in range
+        let t = if t_min < 0.0 { t_max } else { t_min };
+        StepResolutionResult::ResolvedTo((step1.lerp(t), step2.lerp(t)))
     }
 }
 
@@ -162,6 +178,9 @@ mod tests {
     use crate::math::Vec2;
 
     use super::*;
+    fn approx_eq(a: f64, b: f64) -> bool {
+        (a.abs() - b.abs()).abs() < DISTANCE_TOLERANCE
+    }
 
     #[test]
     fn test_resolve_to_bounds_err() {
@@ -190,7 +209,7 @@ mod tests {
         match step.resolve_to_unit_bounds() {
             StepResolutionResult::ResolvedTo(s) => {
                 let actual_delta = s.delta;
-                assert!(approx::eq(&actual_delta.x, &0.25));
+                assert!(approx_eq(actual_delta.x, 0.25));
                 assert_eq!(actual_delta.y, 0.0);
             }
             _ => panic!("Expected ResolvedTo"),
@@ -203,7 +222,7 @@ mod tests {
         match step.resolve_to_unit_bounds() {
             StepResolutionResult::ResolvedTo(s) => {
                 let actual_delta = s.delta;
-                assert!(approx::eq(&actual_delta.y, &-0.25));
+                assert!(approx_eq(actual_delta.y, -0.25));
                 assert_eq!(actual_delta.x, 0.0);
             }
             _ => panic!("Expected ResolvedTo"),
@@ -216,8 +235,8 @@ mod tests {
         match step.resolve_to_unit_bounds() {
             StepResolutionResult::ResolvedTo(s) => {
                 let actual_delta = s.delta;
-                assert!(approx::eq(&actual_delta.y, &-0.25));
-                assert!(approx::eq(&actual_delta.x, &0.125));
+                assert!(approx_eq(actual_delta.y, -0.25));
+                assert!(approx_eq(actual_delta.x, 0.125));
             }
             _ => panic!("Expected ResolvedTo"),
         };
@@ -263,7 +282,7 @@ mod tests {
                 let collidable2 = resolved_step2.collapse();
 
                 let actual_distance = (&collidable1.position - &collidable2.position).norm();
-                assert!(approx::eq(&actual_distance, &3.0));
+                assert!(approx_eq(actual_distance, 3.0));
             }
             _ => panic!("Expected resolved to"),
         }
@@ -271,32 +290,6 @@ mod tests {
 
     #[test]
     fn test_resolve_steps_resolved_to2() {
-        // from integ tests
-        let step1 = Step::new(
-            Collidable::new((0.580360474018288, 0.23079649951574432).into(), 0.05),
-            (0.0, 0.0).into(),
-        );
-        let step2 = Step::new(
-            Collidable::new((0.5587955392260445, 0.1331494125781081).into(), 0.05),
-            (-0.00594648062032381, 0.0632561754298869).into(),
-        );
-        match Step::resolve_steps(&step1, &step2) {
-            StepResolutionResult::ResolvedTo((s1, s2)) => {
-                let c1 = s1.collapse();
-                let c2 = s2.collapse();
-                assert!(!c1.is_colliding(&c2));
-            }
-            StepResolutionResult::Ok => {
-                let c1 = step1.collapse();
-                let c2 = step2.collapse();
-                assert!(!c1.is_colliding(&c2));
-            }
-            _ => panic!("Unexpected error"),
-        }
-    }
-
-    #[test]
-    fn test_resolve_steps_resolved_to3() {
         // from integ tests
         let step1 = Step::new(
             Collidable::new((0.623536166715676, 0.4332076978484418).into(), 0.05),

@@ -15,6 +15,7 @@ pub struct Kennel {
 }
 
 static MAX_INITIALIZATION_RETRIES: u8 = 32;
+static JITTER_STRENTH: f64 = 0.2;
 
 /**
  * Returns a random non-inclusive value between low and high. That is
@@ -131,16 +132,24 @@ impl Kennel {
             .map(|creature| creature.next_state(rng))
             .collect();
 
-        let to_step = |creature: &Creature| {
+        let mut to_step = |creature: &Creature| {
             let collidable = creature.collidable.clone();
             match creature.state.state_type {
                 StateType::Follow => {
                     let delta = &center_of_mass - &collidable.position;
-                    Step::new(collidable, delta.with_norm(creature.metadatum.step_size))
+                    let jitter = &(delta.norm() * JITTER_STRENTH) * &Vec2::random(rng);
+                    Step::new(
+                        collidable,
+                        (delta + jitter).with_norm(creature.metadatum.step_size),
+                    )
                 }
                 StateType::Flee => {
                     let delta = &collidable.position - &center_of_mass;
-                    Step::new(collidable, delta.with_norm(creature.metadatum.step_size))
+                    let jitter = &(delta.norm() * JITTER_STRENTH) * &Vec2::random(rng);
+                    Step::new(
+                        collidable,
+                        (delta + jitter).with_norm(creature.metadatum.step_size),
+                    )
                 }
                 _ => Step::new(collidable, Vec2::zero()),
             }
@@ -203,6 +212,7 @@ impl Kennel {
      * Each terminal cell will display the number of creatures in that cell.
      * If the number of creatures is greater than 9, it will display `+`.
      */
+    #[allow(dead_code)]
     pub fn pretty_print(&self) -> () {
         let (screen_width, screen_height) = terminal_size().unwrap();
         let cell_width = 1.0 / Into::<f64>::into(screen_width);
@@ -235,6 +245,7 @@ impl Kennel {
         }
     }
 
+    #[allow(dead_code)]
     pub fn print(&self) -> () {
         print!("{esc}c", esc = 27 as char); // clear the screen
         for creature in self.creatures.iter() {

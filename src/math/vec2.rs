@@ -1,4 +1,9 @@
-use std::ops::{Add, Div, Mul, Sub};
+use std::{
+    f64::consts::PI,
+    ops::{Add, Div, Mul, Sub},
+};
+
+use rand::Rng;
 
 #[derive(Clone, Debug)]
 pub struct Vec2 {
@@ -106,5 +111,10 @@ impl Vec2 {
 
     pub fn dot(v1: &Self, v2: &Self) -> f64 {
         v1.x * v2.x + v1.y * v2.y
+    }
+
+    pub fn random<R: Rng + ?Sized>(rng: &mut R) -> Self {
+        let theta = rng.random_range(0.0..(2.0 * PI));
+        (theta.cos(), theta.sin()).into()
     }
 }

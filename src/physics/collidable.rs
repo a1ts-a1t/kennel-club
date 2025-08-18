@@ -1,4 +1,4 @@
-use crate::math::{Vec2, approx};
+use crate::math::Vec2;
 
 /**
  * A spherical collidable object
@@ -16,8 +16,7 @@ impl Collidable {
 
     /**
      * Returns if two collidables are currently colliding.
-     *
-     * Note: Bordering (or close to bordering) does not count as colliding)
+     * (exact bordering does not count as colliding)
      */
     pub fn is_colliding(&self, other: &Collidable) -> bool {
         let delta = &self.position - &other.position;
@@ -26,19 +25,17 @@ impl Collidable {
         let delta2 = delta.squared_norm();
         let threshold2 = threshold * threshold;
 
-        approx::lt(&delta2, &threshold2)
+        delta2 < threshold2
     }
 
     pub fn is_out_of_unit_bounds(&self) -> bool {
         // let lower_bound = 0.0 + self.radius;
-        if approx::lt(&self.position.x, &self.radius) || approx::lt(&self.position.y, &self.radius)
-        {
+        if self.position.x < self.radius || self.position.y < self.radius {
             return true;
         }
 
         let upper_bound = 1.0 - self.radius;
-        if approx::gt(&self.position.x, &upper_bound) || approx::gt(&self.position.y, &upper_bound)
-        {
+        if self.position.x > upper_bound || self.position.y > upper_bound {
             return true;
         }
 

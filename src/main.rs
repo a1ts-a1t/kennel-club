@@ -11,16 +11,14 @@ fn main() {
     let mut rng = rand::rng();
     let creature_metadata: Vec<_> = (0..32)
         .into_iter()
-        .map(|idx| creature::Metadatum::new(format!("id{}", idx), 0.5, 0.05))
+        .map(|idx| creature::Metadatum::new(format!("id{}", idx), 0.1, 0.01))
         .collect();
     let mut kennel = Kennel::new(creature_metadata, &mut rng).unwrap();
 
     // I'm pretty sure there are issues with numerical imprecision stacking on itself
     // but..... let's just integ test the hell out of it and call it a day :)
-    for i in 1..usize::MAX {
-        // kennel.pretty_print();
+    for _ in 1..usize::MAX {
         kennel.print();
-        println!("Iteration {}", i);
         kennel = kennel.next(&mut rng).unwrap();
         sleep(Duration::from_secs(1));
     }
