@@ -87,6 +87,10 @@ impl Div<f64> for &Vec2 {
 }
 
 impl Vec2 {
+    pub fn new(x: f64, y: f64) -> Self {
+        Vec2 { x, y }
+    }
+
     pub fn squared_norm(&self) -> f64 {
         self.x * self.x + self.y * self.y
     }

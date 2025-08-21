@@ -5,8 +5,7 @@ use rand::Rng;
 use termion::terminal_size;
 
 use crate::creature::Creature;
-use crate::creature::Metadatum;
-use crate::creature::StateType;
+use crate::creature::Metadata;
 use crate::math::Vec2;
 use crate::physics::{Collidable, Step, StepResolutionResult};
 
@@ -15,22 +14,6 @@ pub struct Kennel {
 }
 
 static MAX_INITIALIZATION_RETRIES: u8 = 32;
-static JITTER_STRENTH: f64 = 0.2;
-
-/**
- * Returns a random non-inclusive value between low and high. That is
- * a uniformly distributed random value in (low, high)
- *
- * I KNOW THE DISTRIBUTION IS NOT TECHNICALLY UNIFORM
- * I DON'T CARE
- */
-fn random_noninclusive<R: Rng + ?Sized>(low: f64, high: f64, rng: &mut R) -> f64 {
-    let val = rng.random_range(low..high);
-    if val == low {
-        return low.next_up();
-    }
-    val
-}
 
 impl Kennel {
     /**
@@ -40,40 +23,39 @@ impl Kennel {
      * I know dart throwing is not sexy, but give me a break, this is like. n=10 or something.
      */
     pub fn new<R: Rng + ?Sized>(
-        creature_metadata: Vec<Metadatum>,
+        creature_metadata: Vec<Metadata>,
         rng: &mut R,
     ) -> Result<Self, String> {
         let creatures: Vec<_> = creature_metadata
             .into_iter()
-            .map(|metadatum| Creature::from_metadatum(metadatum, rng))
+            .map(|metadata| Creature::from_metadata(metadata, rng))
             .collect();
 
         let mut unpositioned_creatures = creatures.into_iter();
         let mut repositioned_creatures: Vec<Creature> = vec![];
 
         while let Some(current_creature) = unpositioned_creatures.next() {
-            let radius = current_creature.metadatum.radius;
+            let radius = current_creature.metadata.radius;
             let diameter = radius * 2.0;
             if diameter > 1.0 {
                 return Err(format!(
                     "Creature {} has radius {} and is too large for the kennel size.",
-                    current_creature.metadatum.id, radius
+                    current_creature.metadata.id, radius
                 ));
             }
 
             let random_collidable = |_| {
-                let position: Vec2 = (
-                    random_noninclusive(radius, 1.0 - radius, rng),
-                    random_noninclusive(radius, 1.0 - radius, rng),
-                )
-                    .into();
+                let position = Vec2::new(
+                    rng.random_range(f64::next_up(0.0)..1.0),
+                    rng.random_range(f64::next_up(0.0)..1.0),
+                );
                 Collidable::new(position, radius)
             };
 
             let is_not_colliding = |collidable: &Collidable| {
                 !repositioned_creatures
                     .iter()
-                    .any(|creature| collidable.is_colliding(&creature.collidable))
+                    .any(|creature| collidable.is_colliding(&creature.as_collidable()))
             };
 
             let repositioned_collidable = (0..MAX_INITIALIZATION_RETRIES)
@@ -82,11 +64,11 @@ impl Kennel {
                 .find(is_not_colliding);
 
             match repositioned_collidable {
-                Some(c) => repositioned_creatures.push(current_creature.reposition(c.position)),
+                Some(c) => repositioned_creatures.push(current_creature.set_position(c.position)),
                 None => {
                     return Err(format!(
                         "Unable to position creature {}",
-                        current_creature.metadatum.id
+                        current_creature.metadata.id
                     ));
                 }
             }
@@ -101,13 +83,13 @@ impl Kennel {
         let weighted_position_sum = self
             .creatures
             .iter()
-            .map(|creature| &creature.collidable.radius * &creature.collidable.position)
+            .map(|creature| &creature.radius() * &creature.position)
             .reduce(|acc, e| acc + e);
 
         let weight_sum = self
             .creatures
             .iter()
-            .map(|creature| creature.collidable.radius)
+            .map(|creature| creature.radius())
             .reduce(|acc, e| acc + e);
 
         match (weighted_position_sum, weight_sum) {
@@ -122,49 +104,26 @@ impl Kennel {
      * This moves each creature forward a time step
      * and de-collides them.
      */
-    pub fn next<R: Rng + ?Sized>(&self, rng: &mut R) -> Result<Self, String> {
+    pub fn next<R: Rng + ?Sized>(self, rng: &mut R) -> Result<Self, String> {
         // get the new states of all creatures
         let center_of_mass = self.center_of_mass();
 
         let new_creatures: Vec<_> = self
             .creatures
-            .iter()
-            .map(|creature| creature.next_state(rng))
+            .into_iter()
+            .map(|creature| creature.into_next_state(rng))
             .collect();
-
-        let mut to_step = |creature: &Creature| {
-            let collidable = creature.collidable.clone();
-            match creature.state.state_type {
-                StateType::Follow => {
-                    let delta = &center_of_mass - &collidable.position;
-                    let jitter = &(delta.norm() * JITTER_STRENTH) * &Vec2::random(rng);
-                    Step::new(
-                        collidable,
-                        (delta + jitter).with_norm(creature.metadatum.step_size),
-                    )
-                }
-                StateType::Flee => {
-                    let delta = &collidable.position - &center_of_mass;
-                    let jitter = &(delta.norm() * JITTER_STRENTH) * &Vec2::random(rng);
-                    Step::new(
-                        collidable,
-                        (delta + jitter).with_norm(creature.metadatum.step_size),
-                    )
-                }
-                _ => Step::new(collidable, Vec2::zero()),
-            }
-        };
 
         // create new steps and resolve to bounds
         let mut steps: Vec<Step> = vec![];
         for creature in new_creatures.iter() {
-            let unresolved_step = to_step(creature);
+            let unresolved_step = creature.get_next_step(&center_of_mass, rng);
             let resolution_result = unresolved_step.resolve_to_unit_bounds();
             match resolution_result {
                 StepResolutionResult::Ok => steps.push(unresolved_step),
                 StepResolutionResult::ResolvedTo(step) => steps.push(step),
                 StepResolutionResult::Err => {
-                    return Err(format!("Out of bounds: ({:?})", creature.collidable));
+                    return Err(format!("Out of bounds: ({:?})", creature.as_collidable()));
                 }
             }
         }
@@ -173,6 +132,7 @@ impl Kennel {
         // I KNOW CHECKING ALL PAIRS IS NEITHER EFFICIENT NOR COOL
         // BUT AGAIN LIKE N<10
         // (something something muttering quadtree under my breath)
+        // (something something broad phase idk)
 
         let mut recheck = true;
         while recheck {
@@ -198,7 +158,7 @@ impl Kennel {
         }
 
         let repositioned_creatures: Vec<_> = zip(new_creatures, steps)
-            .map(|(creature, step)| creature.reposition(step.collapse().position))
+            .map(|(creature, step)| creature.step(step))
             .collect();
 
         Ok(Kennel {
@@ -224,7 +184,7 @@ impl Kennel {
             .creatures
             .iter()
             .map(|creature| {
-                let position = creature.position();
+                let position = creature.position.clone();
                 let idx = (position.x / cell_width).floor() as u16;
                 let idy = (position.y / cell_height).floor() as u16;
                 idy * screen_width + idx
@@ -251,10 +211,10 @@ impl Kennel {
         for creature in self.creatures.iter() {
             println!(
                 "{:5}({:.3}, {:.3}) - {:?}",
-                creature.metadatum.id,
-                creature.position().x,
-                creature.position().y,
-                creature.state.state_type
+                creature.metadata.id,
+                creature.position.x,
+                creature.position.y,
+                creature.creature_state
             );
         }
     }
@@ -270,8 +230,8 @@ mod tests {
     #[test]
     fn test_new_fail() {
         let mut rng = SmallRng::seed_from_u64(RNG_SEED);
-        let metadatum = Metadatum::new("id".to_string(), 0.0, 100.0);
-        let kennel_result = Kennel::new(vec![metadatum], &mut rng);
+        let metadata = Metadata::new("id".to_string(), 0.0, 100.0);
+        let kennel_result = Kennel::new(vec![metadata], &mut rng);
         assert!(kennel_result.is_err());
     }
 
@@ -280,14 +240,14 @@ mod tests {
         let mut rng = SmallRng::seed_from_u64(RNG_SEED);
         let metadata: Vec<_> = (1..=10)
             .into_iter()
-            .map(|radius| Metadatum::new(format!("id{}", radius), 0.0, (radius as f64) / 100.0))
+            .map(|radius| Metadata::new(format!("id{}", radius), 0.0, (radius as f64) / 100.0))
             .collect();
 
         let kennel = Kennel::new(metadata, &mut rng).unwrap();
         let collidable_combinations = kennel
             .creatures
             .into_iter()
-            .map(|creature| creature.collidable)
+            .map(|creature| creature.as_collidable())
             .combinations(2);
 
         for collidable_combination in collidable_combinations {

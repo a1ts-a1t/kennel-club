@@ -1,64 +1,140 @@
-pub use metadatum::Metadatum;
+pub use metadata::Metadata;
 use rand::Rng;
-pub use state::{State, StateType};
+use state::CreatureState;
 
+use crate::physics::Step;
+use crate::sprite::{SpriteSheet, SpriteState};
 use crate::{math::Vec2, physics::Collidable};
 
-mod metadatum;
+mod metadata;
 mod state;
 
-#[derive(Clone, Debug)]
+static JITTER_STRENGTH: f64 = 0.2;
+
+#[derive(Debug)]
 pub struct Creature {
-    pub state: State,
-    // sprite: String, // some combination of sprite sheet metadata and state duration
-    pub collidable: Collidable,
-    pub metadatum: Metadatum,
+    pub creature_state: CreatureState,
+    pub position: Vec2,
+    pub metadata: Metadata,
+    pub sprite_state: SpriteState,
+    pub sprite_state_duration: usize,
+    pub sprite_sheet: SpriteSheet,
 }
 
 impl Creature {
     /**
-     * Initializes a new creature from metadatum with a (uniformly) random state
+     * Initializes a new creature from metadata with a (uniformly) random state
      * and a random position.
      *
      * NOTE: This position is not bound!
      */
-    pub fn from_metadatum<R: Rng + ?Sized>(metadatum: Metadatum, rng: &mut R) -> Self {
-        let state: State = StateType::random(rng).into();
+    pub fn from_metadata<R: Rng + ?Sized>(metadata: Metadata, rng: &mut R) -> Self {
+        let state: CreatureState = CreatureState::random(rng);
         let position: Vec2 = (rng.random::<f64>(), rng.random::<f64>()).into();
-        let collidable = Collidable::new(position, metadatum.radius);
         Creature {
-            state,
-            collidable,
-            metadatum,
+            creature_state: state,
+            position,
+            metadata,
+            sprite_state: SpriteState::Idle,
+            sprite_state_duration: 0,
+            sprite_sheet: SpriteSheet::default(),
         }
     }
 
     /**
      * Computes the next state (randomly) for the creature.
      * DOES NOT REPOSITION THE CREATURE. THE COLLIDABLE DOES NOT CHANGE.
+     * THE SPRITE STATE DOES NOT CHANGE.
      */
-    pub fn next_state<R: Rng + ?Sized>(&self, rng: &mut R) -> Self {
-        let next_state = self.state.next(rng);
+    pub fn into_next_state<R: Rng + ?Sized>(self, rng: &mut R) -> Self {
+        let next_state = self.creature_state.next(rng);
         Creature {
-            state: next_state,
-            collidable: self.collidable.clone(),
-            metadatum: self.metadatum.clone(),
+            creature_state: next_state,
+            position: self.position,
+            metadata: self.metadata,
+            sprite_state: self.sprite_state,
+            sprite_state_duration: self.sprite_state_duration,
+            sprite_sheet: self.sprite_sheet,
         }
     }
 
     /**
-     * Moves the creature to the new position and consumes it.
+     * Has the creature take a step in the direction.
+     * Changes the sprite.
      */
-    pub fn reposition(self, new_position: Vec2) -> Self {
-        let new_collidable = Collidable::new(new_position, self.metadatum.radius);
+    pub fn step(self, step: Step) -> Self {
+        let new_sprite_state = match SpriteState::from_delta(&step.delta) {
+            Some(s) => s,
+            None if self.creature_state == CreatureState::Sleep => SpriteState::Sleep,
+            None => SpriteState::Idle,
+        };
+        let new_sprite_state_duration = if new_sprite_state == self.sprite_state {
+            self.sprite_state_duration + 1
+        } else {
+            0
+        };
+        let new_position = step.collapse().position;
+
         Creature {
-            state: self.state,
-            collidable: new_collidable,
-            metadatum: self.metadatum,
+            creature_state: self.creature_state,
+            position: new_position,
+            metadata: self.metadata,
+            sprite_state: new_sprite_state,
+            sprite_state_duration: new_sprite_state_duration,
+            sprite_sheet: self.sprite_sheet,
         }
     }
 
-    pub fn position(&self) -> Vec2 {
-        self.collidable.position.clone()
+    /**
+     * Set position field WITHOUT CHANGING ANYTHING ELSE
+     */
+    pub fn set_position(self, position: Vec2) -> Self {
+        Creature {
+            creature_state: self.creature_state,
+            position,
+            metadata: self.metadata,
+            sprite_state: self.sprite_state,
+            sprite_state_duration: self.sprite_state_duration,
+            sprite_sheet: self.sprite_sheet,
+        }
+    }
+
+    /**
+     * Calculates the next step given the creature's position
+     * and a center of mass to trend toward.
+     */
+    pub fn get_next_step<R: Rng + ?Sized>(&self, center_of_mass: &Vec2, rng: &mut R) -> Step {
+        match self.creature_state {
+            CreatureState::Follow => {
+                let delta = center_of_mass - &self.position;
+                let jitter = &(delta.norm() * JITTER_STRENGTH) * &Vec2::random(rng);
+                Step::new(
+                    self.as_collidable(),
+                    (delta + jitter).with_norm(self.metadata.step_size),
+                )
+            }
+            CreatureState::Flee => {
+                let delta = &self.position - center_of_mass;
+                let jitter = &(delta.norm() * JITTER_STRENGTH) * &Vec2::random(rng);
+                Step::new(
+                    self.as_collidable(),
+                    (delta + jitter).with_norm(self.metadata.step_size),
+                )
+            }
+            _ => Step::new(self.as_collidable(), Vec2::zero()),
+        }
+    }
+
+    pub fn as_collidable(&self) -> Collidable {
+        Collidable::new(self.position.clone(), self.metadata.radius)
+    }
+
+    pub fn radius(&self) -> f64 {
+        self.metadata.radius.clone()
+    }
+
+    pub fn get_sprite(&self) -> Vec<u8> {
+        self.sprite_sheet
+            .get_sprite(&self.sprite_state, self.sprite_state_duration)
     }
 }

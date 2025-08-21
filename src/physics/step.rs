@@ -6,7 +6,7 @@ use crate::{
 #[derive(Clone, Debug)]
 pub struct Step {
     pub collidable: Collidable,
-    delta: Vec2,
+    pub delta: Vec2,
 }
 
 #[derive(Debug)]
@@ -170,6 +170,15 @@ impl Step {
         // in range
         let t = if t_min < 0.0 { t_max } else { t_min };
         StepResolutionResult::ResolvedTo((step1.lerp(t), step2.lerp(t)))
+    }
+}
+
+impl From<Collidable> for Step {
+    fn from(value: Collidable) -> Self {
+        Step {
+            collidable: value,
+            delta: Vec2::zero(),
+        }
     }
 }
 
