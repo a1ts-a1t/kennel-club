@@ -3,7 +3,7 @@ use rand::Rng;
 use state::CreatureState;
 
 use crate::physics::Step;
-use crate::sprite::{SpriteSheet, SpriteState};
+use crate::sprite::SpriteState;
 use crate::{math::Vec2, physics::Collidable};
 
 mod metadata;
@@ -18,7 +18,6 @@ pub struct Creature {
     pub metadata: Metadata,
     pub sprite_state: SpriteState,
     pub sprite_state_duration: usize,
-    pub sprite_sheet: SpriteSheet,
 }
 
 impl Creature {
@@ -37,7 +36,6 @@ impl Creature {
             metadata,
             sprite_state: SpriteState::Idle,
             sprite_state_duration: 0,
-            sprite_sheet: SpriteSheet::default(),
         }
     }
 
@@ -54,7 +52,6 @@ impl Creature {
             metadata: self.metadata,
             sprite_state: self.sprite_state,
             sprite_state_duration: self.sprite_state_duration,
-            sprite_sheet: self.sprite_sheet,
         }
     }
 
@@ -81,7 +78,6 @@ impl Creature {
             metadata: self.metadata,
             sprite_state: new_sprite_state,
             sprite_state_duration: new_sprite_state_duration,
-            sprite_sheet: self.sprite_sheet,
         }
     }
 
@@ -95,7 +91,6 @@ impl Creature {
             metadata: self.metadata,
             sprite_state: self.sprite_state,
             sprite_state_duration: self.sprite_state_duration,
-            sprite_sheet: self.sprite_sheet,
         }
     }
 
@@ -133,8 +128,10 @@ impl Creature {
         self.metadata.radius.clone()
     }
 
-    pub fn get_sprite(&self) -> Vec<u8> {
-        self.sprite_sheet
-            .get_sprite(&self.sprite_state, self.sprite_state_duration)
+    pub fn get_sprite(&self) -> Option<Vec<u8>> {
+        match &self.metadata.sprite_sheet {
+            Some(sprite_sheet) => Some(sprite_sheet.get_sprite(&self.sprite_state, self.sprite_state_duration)),
+            None => None,
+        }
     }
 }

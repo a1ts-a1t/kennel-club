@@ -1,6 +1,10 @@
-use std::{cmp::Ordering, f64::consts::PI, fmt, ops::Range};
+use std::{f64::consts::PI, fmt, fs, ops::Range, path::{Path, PathBuf}};
+
+use serde::{de, Deserialize, Deserializer};
 
 use crate::math::Vec2;
+
+static SPRITE_ROOT: &str = "../data";
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum SpriteState {
@@ -66,24 +70,62 @@ impl SpriteState {
     }
 }
 
+struct SpriteSheetLoader {
+    id: String,
+    idle_file_names: Vec<String>,
+    sleep_file_names: Vec<String>,
+    east_file_names: Vec<String>,
+    northeast_file_names: Vec<String>,
+    north_file_names: Vec<String>,
+    northwest_file_names: Vec<String>,
+    west_file_names: Vec<String>,
+    southwest_file_names: Vec<String>,
+    south_file_names: Vec<String>,
+    southeast_file_names: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct SpriteSheet {
+    #[serde(deserialize_with = "from_paths")]
     idle: Vec<Vec<u8>>,
+    #[serde(deserialize_with = "from_paths")]
     sleep: Vec<Vec<u8>>,
+    #[serde(deserialize_with = "from_paths")]
     east: Vec<Vec<u8>>,
+    #[serde(deserialize_with = "from_paths")]
     northeast: Vec<Vec<u8>>,
+    #[serde(deserialize_with = "from_paths")]
     north: Vec<Vec<u8>>,
+    #[serde(deserialize_with = "from_paths")]
     northwest: Vec<Vec<u8>>,
+    #[serde(deserialize_with = "from_paths")]
     west: Vec<Vec<u8>>,
+    #[serde(deserialize_with = "from_paths")]
     southwest: Vec<Vec<u8>>,
+    #[serde(deserialize_with = "from_paths")]
     south: Vec<Vec<u8>>,
+    #[serde(deserialize_with = "from_paths")]
     southeast: Vec<Vec<u8>>,
 }
 
-impl SpriteSheet {
-    pub fn load() -> Self {
-        todo!();
-    }
+fn from_paths<'de, D>(deserializer: D) -> Result<Vec<Vec<u8>>, D::Error>
+where
+    D: Deserializer<'de>
+{
+    let path_strs: Vec<String> = Deserialize::deserialize(deserializer)?;
+    let sprite_data: Result<Vec<_>, _>= path_strs.into_iter()
+        .map(|path_str| PathBuf::from(path_str))
+        .map(|path| PathBuf::from(SPRITE_ROOT).join(path))
+        .map(|path| fs::read(path))
+        .collect();
 
+    match sprite_data {
+        Ok(d) => Ok(d),
+        Err(e) => Err(de::Error::custom(e)),
+    }
+}
+
+impl SpriteSheet {
     pub fn get_sprite(&self, sprite_state: &SpriteState, frame: usize) -> Vec<u8> {
         let frame_idx = match sprite_state {
             SpriteState::Idle => frame % self.idle.len(),
@@ -110,12 +152,6 @@ impl SpriteSheet {
             SpriteState::South => self.south.get(frame_idx).unwrap().to_vec(),
             SpriteState::Southeast => self.southeast.get(frame_idx).unwrap().to_vec(),
         }
-    }
-}
-
-impl fmt::Debug for SpriteSheet {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        todo!()
     }
 }
 

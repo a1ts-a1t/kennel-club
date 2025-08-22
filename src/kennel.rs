@@ -134,6 +134,7 @@ impl Kennel {
         // (something something muttering quadtree under my breath)
         // (something something broad phase idk)
 
+        // FIXME :(
         let mut recheck = true;
         while recheck {
             recheck = false;
@@ -230,7 +231,7 @@ mod tests {
     #[test]
     fn test_new_fail() {
         let mut rng = SmallRng::seed_from_u64(RNG_SEED);
-        let metadata = Metadata::new("id".to_string(), 0.0, 100.0);
+        let metadata = Metadata::new("id".to_string(), 0.0, 100.0, None);
         let kennel_result = Kennel::new(vec![metadata], &mut rng);
         assert!(kennel_result.is_err());
     }
@@ -240,7 +241,7 @@ mod tests {
         let mut rng = SmallRng::seed_from_u64(RNG_SEED);
         let metadata: Vec<_> = (1..=10)
             .into_iter()
-            .map(|radius| Metadata::new(format!("id{}", radius), 0.0, (radius as f64) / 100.0))
+            .map(|radius| Metadata::new(format!("id{}", radius), 0.0, (radius as f64) / 100.0, None))
             .collect();
 
         let kennel = Kennel::new(metadata, &mut rng).unwrap();
