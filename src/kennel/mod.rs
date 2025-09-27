@@ -6,8 +6,11 @@ use termion::terminal_size;
 
 use crate::creature::Creature;
 use crate::creature::Metadata;
+use crate::kennel::collision::Arena;
 use crate::math::Vec2;
-use crate::physics::{Collidable, Step, StepResolutionResult};
+use crate::physics::Collidable;
+
+mod collision;
 
 pub struct Kennel {
     creatures: Vec<Creature>,
@@ -46,8 +49,8 @@ impl Kennel {
 
             let random_collidable = |_| {
                 let position = Vec2::new(
-                    rng.random_range(f64::next_up(0.0)..1.0),
-                    rng.random_range(f64::next_up(0.0)..1.0),
+                    rng.random_range(f64::next_up(radius)..(1.0 - radius)),
+                    rng.random_range(f64::next_up(radius)..(1.0 - radius)),
                 );
                 Collidable::new(position, radius)
             };
@@ -115,49 +118,13 @@ impl Kennel {
             .collect();
 
         // create new steps and resolve to bounds
-        let mut steps: Vec<Step> = vec![];
+        let mut arena: Arena = Arena::new();
         for creature in new_creatures.iter() {
-            let unresolved_step = creature.get_next_step(&center_of_mass, rng);
-            let resolution_result = unresolved_step.resolve_to_unit_bounds();
-            match resolution_result {
-                StepResolutionResult::Ok => steps.push(unresolved_step),
-                StepResolutionResult::ResolvedTo(step) => steps.push(step),
-                StepResolutionResult::Err => {
-                    return Err(format!("Out of bounds: ({:?})", creature.as_collidable()));
-                }
-            }
+            let step = creature.get_next_step(&center_of_mass, rng);
+            arena.add(step);
         }
 
-        // resolve collisions between collidables
-        // I KNOW CHECKING ALL PAIRS IS NEITHER EFFICIENT NOR COOL
-        // BUT AGAIN LIKE N<10
-        // (something something muttering quadtree under my breath)
-        // (something something broad phase idk)
-
-        // FIXME :(
-        let mut recheck = true;
-        while recheck {
-            recheck = false;
-            for idxs in (0..steps.len()).combinations(2) {
-                let (i, j) = (idxs[0], idxs[1]);
-
-                let step_i = steps.get(i).unwrap();
-                let step_j = steps.get(j).unwrap();
-
-                match Step::resolve_steps(step_i, step_j) {
-                    StepResolutionResult::Ok => (),
-                    StepResolutionResult::ResolvedTo((resolved_step_i, resolved_step_j)) => {
-                        recheck = true;
-                        steps[i] = resolved_step_i;
-                        steps[j] = resolved_step_j;
-                    }
-                    StepResolutionResult::Err => {
-                        return Err(format!("Unresolved collision: ({:?},{:?})", step_i, step_j));
-                    }
-                };
-            }
-        }
-
+        let steps = arena.into_vec();
         let repositioned_creatures: Vec<_> = zip(new_creatures, steps)
             .map(|(creature, step)| creature.step(step))
             .collect();
@@ -211,7 +178,7 @@ impl Kennel {
         print!("{esc}c", esc = 27 as char); // clear the screen
         for creature in self.creatures.iter() {
             println!(
-                "{:5}({:.3}, {:.3}) - {:?}",
+                "{:5}({}, {}) - {:?}",
                 creature.metadata.id,
                 creature.position.x,
                 creature.position.y,
@@ -241,7 +208,9 @@ mod tests {
         let mut rng = SmallRng::seed_from_u64(RNG_SEED);
         let metadata: Vec<_> = (1..=10)
             .into_iter()
-            .map(|radius| Metadata::new(format!("id{}", radius), 0.0, (radius as f64) / 100.0, None))
+            .map(|radius| {
+                Metadata::new(format!("id{}", radius), 0.0, (radius as f64) / 100.0, None)
+            })
             .collect();
 
         let kennel = Kennel::new(metadata, &mut rng).unwrap();

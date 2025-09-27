@@ -1,6 +1,11 @@
-use std::{f64::consts::PI, fmt, fs, ops::Range, path::{Path, PathBuf}};
+use std::{
+    f64::consts::PI,
+    fmt, fs,
+    ops::Range,
+    path::{Path, PathBuf},
+};
 
-use serde::{de, Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer, de};
 
 use crate::math::Vec2;
 
@@ -110,10 +115,11 @@ pub struct SpriteSheet {
 
 fn from_paths<'de, D>(deserializer: D) -> Result<Vec<Vec<u8>>, D::Error>
 where
-    D: Deserializer<'de>
+    D: Deserializer<'de>,
 {
     let path_strs: Vec<String> = Deserialize::deserialize(deserializer)?;
-    let sprite_data: Result<Vec<_>, _>= path_strs.into_iter()
+    let sprite_data: Result<Vec<_>, _> = path_strs
+        .into_iter()
         .map(|path_str| PathBuf::from(path_str))
         .map(|path| PathBuf::from(SPRITE_ROOT).join(path))
         .map(|path| fs::read(path))

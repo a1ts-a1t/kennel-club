@@ -1,6 +1,3 @@
 // codegen for data
 
-fn main() {
-
-}
-
+fn main() {}

@@ -10,9 +10,9 @@ mod sprite;
 
 fn main() {
     let mut rng = rand::rng();
-    let creature_metadata: Vec<_> = (0..32)
+    let creature_metadata: Vec<_> = (0..64)
         .into_iter()
-        .map(|idx| creature::Metadata::new(format!("id{}", idx), 0.1, 0.01))
+        .map(|idx| creature::Metadata::new(format!("id{}", idx), 0.1, 0.01, None))
         .collect();
     let mut kennel = Kennel::new(creature_metadata, &mut rng).unwrap();
 

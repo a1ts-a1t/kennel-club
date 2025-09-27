@@ -9,6 +9,12 @@ pub struct Collidable {
     pub radius: f64,
 }
 
+impl Default for Collidable {
+    fn default() -> Self {
+        Collidable::new(Vec2::zero(), 0.0)
+    }
+}
+
 impl Collidable {
     pub fn new(position: Vec2, radius: f64) -> Self {
         Collidable { position, radius }
