@@ -34,10 +34,8 @@ impl Kennel {
             .map(|metadata| Creature::from_metadata(metadata, rng))
             .collect();
 
-        let mut unpositioned_creatures = creatures.into_iter();
         let mut repositioned_creatures: Vec<Creature> = vec![];
-
-        while let Some(current_creature) = unpositioned_creatures.next() {
+        for current_creature in creatures.into_iter() {
             let radius = current_creature.metadata.radius;
             let diameter = radius * 2.0;
             if diameter > 1.0 {
@@ -62,7 +60,6 @@ impl Kennel {
             };
 
             let repositioned_collidable = (0..MAX_INITIALIZATION_RETRIES)
-                .into_iter()
                 .map(random_collidable)
                 .find(is_not_colliding);
 
@@ -86,7 +83,7 @@ impl Kennel {
         let weighted_position_sum = self
             .creatures
             .iter()
-            .map(|creature| &creature.radius() * &creature.position)
+            .map(|creature| creature.radius() * &creature.position)
             .reduce(|acc, e| acc + e);
 
         let weight_sum = self
@@ -141,7 +138,7 @@ impl Kennel {
      * If the number of creatures is greater than 9, it will display `+`.
      */
     #[allow(dead_code)]
-    pub fn pretty_print(&self) -> () {
+    pub fn pretty_print(&self) {
         let (screen_width, screen_height) = terminal_size().unwrap();
         let cell_width = 1.0 / Into::<f64>::into(screen_width);
         let cell_height = 1.0 / Into::<f64>::into(screen_height);
@@ -162,7 +159,7 @@ impl Kennel {
         print!("{esc}c", esc = 27 as char); // clear the screen
         for index in 0..screen_width * screen_height {
             if index % screen_width == 0 && index > 0 {
-                print!("\n");
+                println!();
             }
 
             match creature_screen_positions.get(&index) {
@@ -174,7 +171,7 @@ impl Kennel {
     }
 
     #[allow(dead_code)]
-    pub fn print(&self) -> () {
+    pub fn print(&self) {
         print!("{esc}c", esc = 27 as char); // clear the screen
         for creature in self.creatures.iter() {
             println!(

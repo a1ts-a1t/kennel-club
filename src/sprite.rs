@@ -1,9 +1,4 @@
-use std::{
-    f64::consts::PI,
-    fmt, fs,
-    ops::Range,
-    path::{Path, PathBuf},
-};
+use std::{f64::consts::PI, fs, ops::Range, path::PathBuf};
 
 use serde::{Deserialize, Deserializer, de};
 
@@ -28,8 +23,8 @@ pub enum SpriteState {
 static SPRITE_STATE_RANGES: [Range<f64>; 7] = [
     (-7.0 * PI / 8.0)..(-5.0 * PI / 8.0),
     (-5.0 * PI / 8.0)..(-3.0 * PI / 8.0),
-    (-3.0 * PI / 8.0)..(-1.0 * PI / 8.0),
-    (-1.0 * PI / 8.0)..(1.0 * PI / 8.0),
+    (-3.0 * PI / 8.0)..(-PI / 8.0),
+    (-PI / 8.0)..(1.0 * PI / 8.0),
     (1.0 * PI / 8.0)..(3.0 * PI / 8.0),
     (3.0 * PI / 8.0)..(5.0 * PI / 8.0),
     (5.0 * PI / 8.0)..(7.0 * PI / 8.0),
@@ -89,7 +84,7 @@ struct SpriteSheetLoader {
     southeast_file_names: Vec<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Default)]
 pub struct SpriteSheet {
     #[serde(deserialize_with = "from_paths")]
     idle: Vec<Vec<u8>>,
@@ -120,9 +115,9 @@ where
     let path_strs: Vec<String> = Deserialize::deserialize(deserializer)?;
     let sprite_data: Result<Vec<_>, _> = path_strs
         .into_iter()
-        .map(|path_str| PathBuf::from(path_str))
+        .map(PathBuf::from)
         .map(|path| PathBuf::from(SPRITE_ROOT).join(path))
-        .map(|path| fs::read(path))
+        .map(fs::read)
         .collect();
 
     match sprite_data {
@@ -157,23 +152,6 @@ impl SpriteSheet {
             SpriteState::Southwest => self.southwest.get(frame_idx).unwrap().to_vec(),
             SpriteState::South => self.south.get(frame_idx).unwrap().to_vec(),
             SpriteState::Southeast => self.southeast.get(frame_idx).unwrap().to_vec(),
-        }
-    }
-}
-
-impl Default for SpriteSheet {
-    fn default() -> Self {
-        SpriteSheet {
-            idle: vec![],
-            sleep: vec![],
-            east: vec![],
-            northeast: vec![],
-            north: vec![],
-            northwest: vec![],
-            west: vec![],
-            southwest: vec![],
-            south: vec![],
-            southeast: vec![],
         }
     }
 }

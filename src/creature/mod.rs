@@ -102,21 +102,21 @@ impl Creature {
         match self.creature_state {
             CreatureState::Follow => {
                 let delta = center_of_mass - &self.position;
-                let jitter = &(delta.norm() * JITTER_STRENGTH) * &Vec2::random(rng);
-                let s = Step::new(
+                let jitter = (delta.norm() * JITTER_STRENGTH) * &Vec2::random(rng);
+
+                Step::new(
                     self.as_collidable(),
                     (delta + jitter).with_norm(self.metadata.step_size),
-                );
-                s
+                )
             }
             CreatureState::Flee => {
                 let delta = &self.position - center_of_mass;
-                let jitter = &(delta.norm() * JITTER_STRENGTH) * &Vec2::random(rng);
-                let s = Step::new(
+                let jitter = (delta.norm() * JITTER_STRENGTH) * &Vec2::random(rng);
+
+                Step::new(
                     self.as_collidable(),
                     (delta + jitter).with_norm(self.metadata.step_size),
-                );
-                s
+                )
             }
             _ => Step::new(self.as_collidable(), Vec2::zero()),
         }
@@ -127,15 +127,12 @@ impl Creature {
     }
 
     pub fn radius(&self) -> f64 {
-        self.metadata.radius.clone()
+        self.metadata.radius
     }
 
     pub fn get_sprite(&self) -> Option<Vec<u8>> {
-        match &self.metadata.sprite_sheet {
-            Some(sprite_sheet) => {
-                Some(sprite_sheet.get_sprite(&self.sprite_state, self.sprite_state_duration))
-            }
-            None => None,
-        }
+        self.metadata.sprite_sheet.as_ref().map(|sprite_sheet| {
+            sprite_sheet.get_sprite(&self.sprite_state, self.sprite_state_duration)
+        })
     }
 }

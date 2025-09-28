@@ -22,8 +22,8 @@ impl ArenaCollision {
 
     fn time(&self) -> f64 {
         match self {
-            ArenaCollision::Bound(_, time) => time.clone(),
-            ArenaCollision::Steps(_, time) => time.clone(),
+            ArenaCollision::Bound(_, time) => *time,
+            ArenaCollision::Steps(_, time) => *time,
         }
     }
 }
@@ -32,7 +32,7 @@ impl Eq for ArenaCollision {}
 
 impl PartialOrd for ArenaCollision {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.time().partial_cmp(&other.time()).map(|o| o.reverse())
+        Some(self.cmp(other))
     }
 }
 
@@ -55,7 +55,7 @@ impl Arena {
         }
     }
 
-    pub fn add(&mut self, new_step: Step) -> () {
+    pub fn add(&mut self, new_step: Step) {
         let new_idx = self.steps.len();
 
         // add in bound collisions
@@ -69,7 +69,7 @@ impl Arena {
             .iter()
             .filter_map(|step| Step::steps_collision_time(step, &new_step))
             .enumerate()
-            .map(|(idx, time)| ArenaCollision::new_steps_collision((idx, new_idx.clone()), time))
+            .map(|(idx, time)| ArenaCollision::new_steps_collision((idx, new_idx), time))
             .for_each(|collision| self.heap.push(collision));
 
         self.steps.push(new_step);
@@ -114,13 +114,13 @@ impl Arena {
         }
 
         // fill in the rest of steps that did not collide
-        for idx in 0..self.steps.len() {
+        for (idx, vec_step) in vec.iter_mut().enumerate() {
             if visited_indices.contains(&idx as &usize) {
                 continue;
             }
 
             if let Some(step) = self.steps.get(idx) {
-                vec[idx] = step.clone();
+                *vec_step = step.clone();
             }
         }
 

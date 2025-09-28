@@ -1,7 +1,4 @@
-use crate::{
-    math::{Vec2, newtons},
-    physics::collidable::Collidable,
-};
+use crate::{math::Vec2, physics::collidable::Collidable};
 
 #[derive(Clone, Debug)]
 pub struct Step {
@@ -60,17 +57,17 @@ impl Step {
         let upper_bound = 1.0 - self.collidable.radius - DISTANCE_TOLERANCE;
 
         let t_x = if final_position.x < lower_bound {
-            (lower_bound - current_position.x) / &self.delta.x
+            (lower_bound - current_position.x) / self.delta.x
         } else if final_position.x > upper_bound {
-            (upper_bound - current_position.x) / &self.delta.x
+            (upper_bound - current_position.x) / self.delta.x
         } else {
             1.0
         };
 
         let t_y = if final_position.y < lower_bound {
-            (lower_bound - current_position.y) / &self.delta.y
+            (lower_bound - current_position.y) / self.delta.y
         } else if final_position.y > upper_bound {
-            (upper_bound - current_position.y) / &self.delta.y
+            (upper_bound - current_position.y) / self.delta.y
         } else {
             1.0
         };
@@ -89,7 +86,7 @@ impl Step {
     pub fn steps_collision_time(step1: &Self, step2: &Self) -> Option<f64> {
         let delta_diff = &step1.delta - &step2.delta;
         let position_diff = &step1.collidable.position - &step2.collidable.position;
-        let radius_sum = &step1.collidable.radius + &step2.collidable.radius;
+        let radius_sum = step1.collidable.radius + step2.collidable.radius;
 
         let a = delta_diff.squared_norm();
 
