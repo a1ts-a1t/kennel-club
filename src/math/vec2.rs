@@ -1,6 +1,6 @@
 use std::{
     f64::consts::PI,
-    ops::{Add, Div, Mul, Sub},
+    ops::{Add, Div, Mul, Neg, Sub},
 };
 
 use rand::Rng;
@@ -16,6 +16,17 @@ impl From<(f64, f64)> for Vec2 {
         Vec2 {
             x: value.0,
             y: value.1,
+        }
+    }
+}
+
+impl Neg for Vec2 {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        Vec2 {
+            x: -self.x,
+            y: -self.y,
         }
     }
 }

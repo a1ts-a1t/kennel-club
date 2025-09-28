@@ -70,7 +70,7 @@ impl Creature {
         } else {
             0
         };
-        let new_position = step.collapse().position;
+        let new_position = step.resolve().position;
 
         Creature {
             creature_state: self.creature_state,

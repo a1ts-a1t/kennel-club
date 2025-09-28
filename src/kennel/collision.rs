@@ -150,10 +150,98 @@ mod tests {
         let actual_position = vec
             .get(0)
             .expect("Arena must contain step")
-            .collapse()
+            .resolve()
             .position;
 
         let diff = (&actual_position - &expected_position).squared_norm();
         assert!(diff < DISTANCE_TOLERANCE);
+    }
+
+    #[test]
+    fn test_step_collision() {
+        let radius = 0.1;
+        let delta = Vec2::new(
+            1.0 - 2.0 * radius - 2.0 * DISTANCE_TOLERANCE,
+            1.0 - 2.0 * radius - 2.0 * DISTANCE_TOLERANCE,
+        );
+
+        let lower_bound = radius + DISTANCE_TOLERANCE;
+        let upper_bound = 1.0 - radius - DISTANCE_TOLERANCE;
+
+        let collidable1 = Collidable::new(Vec2::new(lower_bound, lower_bound), radius);
+        let step1 = Step::new(collidable1, delta.clone());
+
+        let collidable2 = Collidable::new(Vec2::new(upper_bound, upper_bound), radius);
+        let step2 = Step::new(collidable2, -delta.clone());
+
+        let mut arena = Arena::new();
+        arena.add(step1);
+        arena.add(step2);
+        let vec = arena.into_vec();
+
+        let resolved_collidable1 = vec
+            .get(0)
+            .expect("Arena did not produce enough steps")
+            .resolve();
+
+        let resolved_collidable2 = vec
+            .get(1)
+            .expect("Arena did not produce enough steps")
+            .resolve();
+
+        let distance =
+            (&resolved_collidable1.position - &resolved_collidable2.position).squared_norm();
+
+        assert!(!resolved_collidable1.is_colliding(&resolved_collidable2));
+        assert!(distance < 2.0 * (radius + DISTANCE_TOLERANCE));
+    }
+
+    #[test]
+    fn test_step_collision_tweener() {
+        let radius = 0.1;
+        let delta = Vec2::new(
+            1.0 - 2.0 * radius - 2.0 * DISTANCE_TOLERANCE,
+            1.0 - 2.0 * radius - 2.0 * DISTANCE_TOLERANCE,
+        );
+
+        let lower_bound = radius + DISTANCE_TOLERANCE;
+        let upper_bound = 1.0 - radius - DISTANCE_TOLERANCE;
+
+        let collidable1 = Collidable::new(Vec2::new(lower_bound, lower_bound), radius);
+        let step1 = Step::new(collidable1, delta.clone());
+
+        let collidable2 = Collidable::new(Vec2::new(upper_bound, upper_bound), radius);
+        let step2 = Step::new(collidable2, -delta.clone());
+
+        let stationary_collidable = Collidable::new(Vec2::new(0.5, 0.5), radius);
+        let stationary_step = Step::new(stationary_collidable, Vec2::new(0.0, 0.0));
+
+        let mut arena = Arena::new();
+        arena.add(step1);
+        arena.add(step2);
+        arena.add(stationary_step);
+        let vec = arena.into_vec();
+
+        let resolved_collidable1 = vec
+            .get(0)
+            .expect("Arena did not produce enough steps")
+            .resolve();
+
+        let resolved_collidable2 = vec
+            .get(1)
+            .expect("Arena did not produce enough steps")
+            .resolve();
+
+        let stationary_step = vec.get(2).expect("Arena did not produce enough steps");
+
+        assert_eq!(stationary_step.delta.squared_norm(), 0.0);
+        let stationary_collidable = stationary_step.resolve();
+
+        assert!(!stationary_collidable.is_colliding(&resolved_collidable1));
+        assert!(!stationary_collidable.is_colliding(&resolved_collidable2));
+
+        let distance =
+            (&resolved_collidable1.position - &resolved_collidable2.position).squared_norm();
+        assert!(distance < 4.0 * (radius + DISTANCE_TOLERANCE));
     }
 }

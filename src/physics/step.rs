@@ -36,9 +36,9 @@ impl Step {
     }
 
     /**
-     * Collapses the step and adds the delta to the collidable's position.
+     * Resolves the step and adds the delta to the collidable's position.
      */
-    pub fn collapse(&self) -> Collidable {
+    pub fn resolve(&self) -> Collidable {
         Collidable {
             position: self.collidable.position.clone() + self.delta.clone(),
             radius: self.collidable.radius,
@@ -77,7 +77,7 @@ impl Step {
         }
 
         let t = next_down_until(f64::min(t_x, t_y), |t| {
-            !self.lerp(t).collapse().is_out_of_unit_bounds() || t <= 0.0
+            !self.lerp(t).resolve().is_out_of_unit_bounds() || t <= 0.0
         });
 
         Some(t)
@@ -114,15 +114,15 @@ impl Step {
                 next_down_until(t0, |t| {
                     !step1
                         .lerp(t)
-                        .collapse()
-                        .is_colliding(&step2.lerp(t).collapse())
+                        .resolve()
+                        .is_colliding(&step2.lerp(t).resolve())
                 })
             } else {
                 next_up_until(t0, |t| {
                     !step1
                         .lerp(t)
-                        .collapse()
-                        .is_colliding(&step2.lerp(t).collapse())
+                        .resolve()
+                        .is_colliding(&step2.lerp(t).resolve())
                 })
             }
         };
