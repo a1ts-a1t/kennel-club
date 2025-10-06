@@ -1,7 +1,7 @@
 use crate::math::Vec2;
 
 /**
- * A spherical collidable object
+ * A circular collidable object
  */
 #[derive(Clone, Debug)]
 pub struct Collidable {

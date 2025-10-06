@@ -1,11 +1,11 @@
 use std::iter::zip;
 
+use image::DynamicImage;
 use itertools::Itertools;
 use rand::Rng;
 use termion::terminal_size;
 
 use crate::creature::Creature;
-use crate::creature::Metadata;
 use crate::kennel::collision::Arena;
 use crate::math::Vec2;
 use crate::physics::Collidable;
@@ -25,23 +25,15 @@ impl Kennel {
      *
      * I know dart throwing is not sexy, but give me a break, this is like. n=10 or something.
      */
-    pub fn new<R: Rng + ?Sized>(
-        creature_metadata: Vec<Metadata>,
-        rng: &mut R,
-    ) -> Result<Self, String> {
-        let creatures: Vec<_> = creature_metadata
-            .into_iter()
-            .map(|metadata| Creature::from_metadata(metadata, rng))
-            .collect();
-
+    pub fn new<R: Rng + ?Sized>(creatures: Vec<Creature>, rng: &mut R) -> Result<Self, String> {
         let mut repositioned_creatures: Vec<Creature> = vec![];
         for current_creature in creatures.into_iter() {
-            let radius = current_creature.metadata.radius;
+            let radius = current_creature.radius;
             let diameter = radius * 2.0;
             if diameter > 1.0 {
                 return Err(format!(
                     "Creature {} has radius {} and is too large for the kennel size.",
-                    current_creature.metadata.id, radius
+                    current_creature.id, radius
                 ));
             }
 
@@ -68,7 +60,7 @@ impl Kennel {
                 None => {
                     return Err(format!(
                         "Unable to position creature {}",
-                        current_creature.metadata.id
+                        current_creature.id
                     ));
                 }
             }
@@ -83,13 +75,13 @@ impl Kennel {
         let weighted_position_sum = self
             .creatures
             .iter()
-            .map(|creature| creature.radius() * &creature.position)
+            .map(|creature| creature.radius * &creature.position)
             .reduce(|acc, e| acc + e);
 
         let weight_sum = self
             .creatures
             .iter()
-            .map(|creature| creature.radius())
+            .map(|creature| creature.radius)
             .reduce(|acc, e| acc + e);
 
         match (weighted_position_sum, weight_sum) {
@@ -176,18 +168,24 @@ impl Kennel {
         for creature in self.creatures.iter() {
             println!(
                 "{:5}({}, {}) - {:?}",
-                creature.metadata.id,
-                creature.position.x,
-                creature.position.y,
-                creature.creature_state
+                creature.id, creature.position.x, creature.position.y, creature.creature_state
             );
         }
+    }
+
+    #[allow(dead_code)]
+    pub fn get_sprite(&self, id: &str) -> Option<&DynamicImage> {
+        self.creatures
+            .iter()
+            .find(|creature| creature.id == id)
+            .map(|creature| creature.sprite())
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::creature::Metadata;
     use rand::{SeedableRng, rngs::SmallRng};
 
     static RNG_SEED: u64 = 1;
@@ -195,8 +193,8 @@ mod tests {
     #[test]
     fn test_new_fail() {
         let mut rng = SmallRng::seed_from_u64(RNG_SEED);
-        let metadata = Metadata::new("id".to_string(), 0.0, 100.0, None);
-        let kennel_result = Kennel::new(vec![metadata], &mut rng);
+        let creature: Creature = Metadata::mock(100.0).into();
+        let kennel_result = Kennel::new(vec![creature], &mut rng);
         assert!(kennel_result.is_err());
     }
 
@@ -205,9 +203,7 @@ mod tests {
         let mut rng = SmallRng::seed_from_u64(RNG_SEED);
         let metadata: Vec<_> = (1..=10)
             .into_iter()
-            .map(|radius| {
-                Metadata::new(format!("id{}", radius), 0.0, (radius as f64) / 100.0, None)
-            })
+            .map(|radius| Metadata::mock((radius as f64) / 100.0).into())
             .collect();
 
         let kennel = Kennel::new(metadata, &mut rng).unwrap();

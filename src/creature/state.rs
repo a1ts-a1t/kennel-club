@@ -1,26 +1,15 @@
 use rand::{Rng, distr::weighted::WeightedIndex};
+use serde::Deserialize;
 
-#[derive(Clone, PartialEq, Debug)]
-pub enum CreatureState {
+#[derive(Clone, PartialEq, Debug, Deserialize)]
+pub enum State {
     Idle,
     Sleep,
     Follow,
     Flee,
 }
 
-impl CreatureState {
-    /**
-     * Get a random state, uniformly.
-     */
-    pub fn random<R: Rng + ?Sized>(rng: &mut R) -> Self {
-        match rng.random_range(0..=3) {
-            0 => CreatureState::Idle,
-            1 => CreatureState::Sleep,
-            2 => CreatureState::Follow,
-            _ => CreatureState::Flee,
-        }
-    }
-
+impl State {
     /**
      * Given a current state type, generate the next one
      * based on some transition matrix.
@@ -31,10 +20,10 @@ impl CreatureState {
         let index = rng.sample(distr);
 
         match index {
-            0 => CreatureState::Idle,
-            1 => CreatureState::Sleep,
-            2 => CreatureState::Flee,
-            _ => CreatureState::Follow,
+            0 => State::Idle,
+            1 => State::Sleep,
+            2 => State::Flee,
+            _ => State::Follow,
         }
     }
 
@@ -44,10 +33,16 @@ impl CreatureState {
     #[rustfmt::skip]
     fn weights(&self) -> [u8; 4] {
         match self {
-            CreatureState::Idle =>   [75, 15,  5,  5],
-            CreatureState::Sleep =>  [10, 90,  0,  0],
-            CreatureState::Flee =>   [10,  0, 75, 15],
-            CreatureState::Follow => [10,  0, 15, 75],
+            State::Idle =>   [75, 15,  5,  5],
+            State::Sleep =>  [10, 90,  0,  0],
+            State::Flee =>   [10,  0, 75, 15],
+            State::Follow => [10,  0, 15, 75],
         }
+    }
+}
+
+impl Default for State {
+    fn default() -> Self {
+        Self::Idle
     }
 }

@@ -6,7 +6,7 @@ pub struct Step {
     pub delta: Vec2,
 }
 
-pub static DISTANCE_TOLERANCE: f64 = 0.00000000001;
+pub static DISTANCE_TOLERANCE: f64 = 0.000000000001;
 
 fn next_down_until<F: Fn(f64) -> bool>(t0: f64, f: F) -> f64 {
     let mut t = t0;
@@ -159,6 +159,3 @@ impl From<Collidable> for Step {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {}

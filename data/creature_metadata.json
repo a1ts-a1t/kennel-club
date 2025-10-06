@@ -29,12 +29,20 @@
                 "northwest1.gif"
             ],
             "west": [
+                "west0.gif",
+                "west1.gif"
             ],
             "southwest": [
+                "southwest0.gif",
+                "southwest1.gif"
             ],
             "south": [
+                "south0.gif",
+                "south1.gif"
             ],
             "southeast": [
+                "southeast0.gif",
+                "southeast1.gif"
             ]
         }
     }

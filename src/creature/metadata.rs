@@ -1,21 +1,41 @@
-use crate::sprite::SpriteSheet;
+use serde::Deserialize;
 
-#[derive(Debug)]
+use crate::{creature::state::State, sprite};
+
+#[cfg(test)]
+use rand::{Rng, distr::Alphabetic};
+
+/**
+ * Metadata that's loaded in from JSON
+ * Do not directly construct.
+ */
+
+#[derive(Debug, Deserialize)]
 pub struct Metadata {
     pub id: String,
     pub step_size: f64,
     pub radius: f64,
-    pub sprite_sheet: Option<SpriteSheet>,
-    // information that stays static throughout the lifetime of the creature
+    #[serde(alias = "sprites")]
+    pub sprite_loader: sprite::Loader,
+    #[serde(default)]
+    pub initial_state: State,
 }
 
 impl Metadata {
-    pub fn new(id: String, step_size: f64, radius: f64, sprite_sheet: Option<SpriteSheet>) -> Self {
-        Self {
+    #[cfg(test)]
+    pub fn mock(radius: f64) -> Self {
+        let id = rand::rng()
+            .sample_iter(&Alphabetic)
+            .take(5)
+            .map(char::from)
+            .collect();
+
+        Metadata {
             id,
-            step_size,
+            step_size: 0.0,
             radius,
-            sprite_sheet,
+            sprite_loader: sprite::Loader::new(),
+            initial_state: State::Idle,
         }
     }
 }

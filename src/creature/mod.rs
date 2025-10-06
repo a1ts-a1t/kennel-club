@@ -1,9 +1,10 @@
+use image::DynamicImage;
 pub use metadata::Metadata;
 use rand::Rng;
-use state::CreatureState;
+use state::State;
 
 use crate::physics::Step;
-use crate::sprite::SpriteState;
+use crate::sprite;
 use crate::{math::Vec2, physics::Collidable};
 
 mod metadata;
@@ -13,32 +14,33 @@ static JITTER_STRENGTH: f64 = 0.2;
 
 #[derive(Debug)]
 pub struct Creature {
-    pub creature_state: CreatureState,
+    pub id: String,
+    pub step_size: f64,
+    pub radius: f64,
+    pub creature_state: State,
     pub position: Vec2,
-    pub metadata: Metadata,
-    pub sprite_state: SpriteState,
+    pub sprite_state: sprite::State,
     pub sprite_state_duration: usize,
+    pub sprite_sheet: sprite::Sheet,
+}
+
+impl From<Metadata> for Creature {
+    fn from(value: Metadata) -> Self {
+        let sprite_sheet = value.sprite_loader.load(&value.id);
+        Creature {
+            id: value.id,
+            radius: value.radius,
+            step_size: value.step_size,
+            creature_state: value.initial_state,
+            position: Vec2::zero(),
+            sprite_state: sprite::State::Idle,
+            sprite_state_duration: 0,
+            sprite_sheet,
+        }
+    }
 }
 
 impl Creature {
-    /**
-     * Initializes a new creature from metadata with a (uniformly) random state
-     * and a random position.
-     *
-     * NOTE: This position is not bound!
-     */
-    pub fn from_metadata<R: Rng + ?Sized>(metadata: Metadata, rng: &mut R) -> Self {
-        let state: CreatureState = CreatureState::random(rng);
-        let position: Vec2 = (rng.random::<f64>(), rng.random::<f64>()).into();
-        Creature {
-            creature_state: state,
-            position,
-            metadata,
-            sprite_state: SpriteState::Idle,
-            sprite_state_duration: 0,
-        }
-    }
-
     /**
      * Computes the next state (randomly) for the creature.
      * DOES NOT REPOSITION THE CREATURE. THE COLLIDABLE DOES NOT CHANGE.
@@ -47,11 +49,14 @@ impl Creature {
     pub fn into_next_state<R: Rng + ?Sized>(self, rng: &mut R) -> Self {
         let next_state = self.creature_state.next(rng);
         Creature {
+            id: self.id,
+            radius: self.radius,
+            step_size: self.step_size,
             creature_state: next_state,
             position: self.position,
-            metadata: self.metadata,
             sprite_state: self.sprite_state,
             sprite_state_duration: self.sprite_state_duration,
+            sprite_sheet: self.sprite_sheet,
         }
     }
 
@@ -60,24 +65,28 @@ impl Creature {
      * Changes the sprite.
      */
     pub fn step(self, step: Step) -> Self {
-        let new_sprite_state = match SpriteState::from_delta(&step.delta) {
+        let new_sprite_state = match sprite::State::from_delta(&step.delta) {
             Some(s) => s,
-            None if self.creature_state == CreatureState::Sleep => SpriteState::Sleep,
-            None => SpriteState::Idle,
+            None if self.creature_state == State::Sleep => sprite::State::Sleep,
+            None => sprite::State::Idle,
         };
+
         let new_sprite_state_duration = if new_sprite_state == self.sprite_state {
             self.sprite_state_duration + 1
         } else {
             0
         };
-        let new_position = step.resolve().position;
 
+        let new_position = step.resolve().position;
         Creature {
+            id: self.id,
+            radius: self.radius,
+            step_size: self.step_size,
             creature_state: self.creature_state,
             position: new_position,
-            metadata: self.metadata,
             sprite_state: new_sprite_state,
             sprite_state_duration: new_sprite_state_duration,
+            sprite_sheet: self.sprite_sheet,
         }
     }
 
@@ -86,11 +95,14 @@ impl Creature {
      */
     pub fn set_position(self, position: Vec2) -> Self {
         Creature {
+            id: self.id,
+            radius: self.radius,
+            step_size: self.step_size,
             creature_state: self.creature_state,
             position,
-            metadata: self.metadata,
             sprite_state: self.sprite_state,
             sprite_state_duration: self.sprite_state_duration,
+            sprite_sheet: self.sprite_sheet,
         }
     }
 
@@ -100,22 +112,22 @@ impl Creature {
      */
     pub fn get_next_step<R: Rng + ?Sized>(&self, center_of_mass: &Vec2, rng: &mut R) -> Step {
         match self.creature_state {
-            CreatureState::Follow => {
+            State::Follow => {
                 let delta = center_of_mass - &self.position;
                 let jitter = (delta.norm() * JITTER_STRENGTH) * &Vec2::random(rng);
 
                 Step::new(
                     self.as_collidable(),
-                    (delta + jitter).with_norm(self.metadata.step_size),
+                    (delta + jitter).with_norm(self.step_size),
                 )
             }
-            CreatureState::Flee => {
+            State::Flee => {
                 let delta = &self.position - center_of_mass;
                 let jitter = (delta.norm() * JITTER_STRENGTH) * &Vec2::random(rng);
 
                 Step::new(
                     self.as_collidable(),
-                    (delta + jitter).with_norm(self.metadata.step_size),
+                    (delta + jitter).with_norm(self.step_size),
                 )
             }
             _ => Step::new(self.as_collidable(), Vec2::zero()),
@@ -123,16 +135,12 @@ impl Creature {
     }
 
     pub fn as_collidable(&self) -> Collidable {
-        Collidable::new(self.position.clone(), self.metadata.radius)
+        Collidable::new(self.position.clone(), self.radius)
     }
 
-    pub fn radius(&self) -> f64 {
-        self.metadata.radius
-    }
-
-    pub fn get_sprite(&self) -> Option<Vec<u8>> {
-        self.metadata.sprite_sheet.as_ref().map(|sprite_sheet| {
-            sprite_sheet.get_sprite(&self.sprite_state, self.sprite_state_duration)
-        })
+    #[allow(dead_code)]
+    pub fn sprite(&self) -> &DynamicImage {
+        self.sprite_sheet
+            .get_sprite(&self.sprite_state, self.sprite_state_duration)
     }
 }
