@@ -1,9 +1,8 @@
-pub use creature::{Creature, Metadata};
 pub use kennel::Kennel;
+pub use rand;
 
-mod creature;
-mod env;
+pub mod creature;
 mod kennel;
-mod math;
+pub mod math;
 mod physics;
 mod sprite;

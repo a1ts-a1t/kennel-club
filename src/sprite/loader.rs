@@ -1,6 +1,8 @@
+use std::path::PathBuf;
+
 use serde::Deserialize;
 
-use crate::{env::data_dir, sprite::Sheet};
+use crate::sprite::Sheet;
 
 #[derive(Debug, Deserialize)]
 pub struct Loader {
@@ -33,48 +35,47 @@ impl Loader {
         }
     }
 
-    pub fn load(self, path_prefix: &str) -> Sheet {
+    pub fn load(self, path_prefix: &PathBuf) -> Sheet {
         let mut sheet = Sheet::new();
-        let base_path = data_dir().join(path_prefix);
 
         for path in self.idle.into_iter() {
-            sheet.push_idle(base_path.join(path));
+            sheet.push_idle(path_prefix.join(path));
         }
 
         for path in self.sleep.into_iter() {
-            sheet.push_sleep(base_path.join(path));
+            sheet.push_sleep(path_prefix.join(path));
         }
 
         for path in self.east.into_iter() {
-            sheet.push_east(base_path.join(path));
+            sheet.push_east(path_prefix.join(path));
         }
 
         for path in self.northeast.into_iter() {
-            sheet.push_northeast(base_path.join(path));
+            sheet.push_northeast(path_prefix.join(path));
         }
 
         for path in self.north.into_iter() {
-            sheet.push_north(base_path.join(path));
+            sheet.push_north(path_prefix.join(path));
         }
 
         for path in self.northwest.into_iter() {
-            sheet.push_northwest(base_path.join(path));
+            sheet.push_northwest(path_prefix.join(path));
         }
 
         for path in self.west.into_iter() {
-            sheet.push_west(base_path.join(path));
+            sheet.push_west(path_prefix.join(path));
         }
 
         for path in self.southwest.into_iter() {
-            sheet.push_southwest(base_path.join(path));
+            sheet.push_southwest(path_prefix.join(path));
         }
 
         for path in self.south.into_iter() {
-            sheet.push_south(base_path.join(path));
+            sheet.push_south(path_prefix.join(path));
         }
 
         for path in self.southeast.into_iter() {
-            sheet.push_southeast(base_path.join(path));
+            sheet.push_southeast(path_prefix.join(path));
         }
 
         sheet

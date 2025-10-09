@@ -1,7 +1,7 @@
 use rand::{Rng, distr::weighted::WeightedIndex};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, PartialEq, Debug, Deserialize)]
+#[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
 pub enum State {
     Idle,
     Sleep,

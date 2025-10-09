@@ -1,11 +1,12 @@
 use std::iter::zip;
+use std::path::PathBuf;
 
 use image::DynamicImage;
 use itertools::Itertools;
 use rand::Rng;
 use termion::terminal_size;
 
-use crate::creature::Creature;
+use crate::creature::{self, Creature};
 use crate::kennel::collision::Arena;
 use crate::math::Vec2;
 use crate::physics::Collidable;
@@ -19,10 +20,24 @@ pub struct Kennel {
 static MAX_INITIALIZATION_RETRIES: u8 = 32;
 
 impl Kennel {
+    pub fn load<R: Rng + ?Sized>(dir: &PathBuf, rng: &mut R) -> Result<Self, String> {
+        let json = std::fs::read_to_string(dir.join("metadata.json"))
+            .map_err(|_| "Unable to read metadata file")?;
+
+        let metadatas: Vec<creature::Metadata> =
+            serde_json::from_str(&json).map_err(|_| "Unable to deserialize creature metadata")?;
+
+        let creatures: Vec<Creature> = metadatas
+            .into_iter()
+            .map(|metadata| Creature::load(metadata, dir))
+            .collect();
+
+        Kennel::new(creatures, rng)
+    }
+
     /**
      * Initialize a new kennel and reposition creatures such that no two are colliding
      * and none are colliding within the walls.
-     *
      * I know dart throwing is not sexy, but give me a break, this is like. n=10 or something.
      */
     pub fn new<R: Rng + ?Sized>(creatures: Vec<Creature>, rng: &mut R) -> Result<Self, String> {
@@ -71,7 +86,8 @@ impl Kennel {
         })
     }
 
-    pub fn center_of_mass(&self) -> Vec2 {
+    // TODO: i don't really like this as a way to do the thing
+    fn center_of_mass(&self) -> Vec2 {
         let weighted_position_sum = self
             .creatures
             .iter()
@@ -91,22 +107,18 @@ impl Kennel {
     }
 
     /**
-     * Consumes the current kennel state and creates
-     * a kennel that is in the next time state.
+     * creates a kennel that is in the next time step.
      * This moves each creature forward a time step
      * and de-collides them.
      */
-    pub fn next<R: Rng + ?Sized>(self, rng: &mut R) -> Result<Self, String> {
-        // get the new states of all creatures
+    pub fn next<R: Rng + ?Sized>(&self, rng: &mut R) -> Result<Self, String> {
         let center_of_mass = self.center_of_mass();
-
         let new_creatures: Vec<_> = self
             .creatures
-            .into_iter()
-            .map(|creature| creature.into_next_state(rng))
+            .iter()
+            .map(|creature| creature.with_next_state(rng))
             .collect();
 
-        // create new steps and resolve to bounds
         let mut arena: Arena = Arena::new();
         for creature in new_creatures.iter() {
             let step = creature.get_next_step(&center_of_mass, rng);
@@ -121,6 +133,10 @@ impl Kennel {
         Ok(Kennel {
             creatures: repositioned_creatures,
         })
+    }
+
+    pub fn creatures(&self) -> Vec<&Creature> {
+        self.creatures.iter().collect()
     }
 
     /**

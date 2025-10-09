@@ -5,13 +5,13 @@ use super::state::State;
 use image::{DynamicImage, ImageReader};
 
 fn get_sprite(path: PathBuf) -> DynamicImage {
-    ImageReader::open(path)
-        .expect("Error opening sprite file")
+    ImageReader::open(&path)
+        .expect(&format!("Error opening sprite file: {:?}", path))
         .decode()
         .expect("Error decoding sprite")
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Sheet {
     idle: Vec<DynamicImage>,
     sleep: Vec<DynamicImage>,
@@ -109,9 +109,4 @@ impl Sheet {
             State::Southeast => self.southeast.get(frame_idx).unwrap(),
         }
     }
-}
-
-#[cfg(test)]
-pub fn mock_sprite_sheet() -> Sheet {
-    todo!();
 }

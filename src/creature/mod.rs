@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use image::DynamicImage;
 pub use metadata::Metadata;
 use rand::Rng;
@@ -24,39 +26,36 @@ pub struct Creature {
     pub sprite_sheet: sprite::Sheet,
 }
 
-impl From<Metadata> for Creature {
-    fn from(value: Metadata) -> Self {
-        let sprite_sheet = value.sprite_loader.load(&value.id);
+impl Creature {
+    pub fn load(metadata: Metadata, data_dir: &PathBuf) -> Self {
+        let sprite_sheet = metadata.sprite_loader.load(&data_dir.join(&metadata.id));
         Creature {
-            id: value.id,
-            radius: value.radius,
-            step_size: value.step_size,
-            creature_state: value.initial_state,
+            id: metadata.id,
+            radius: metadata.radius,
+            step_size: metadata.step_size,
+            creature_state: metadata.initial_state,
             position: Vec2::zero(),
             sprite_state: sprite::State::Idle,
             sprite_state_duration: 0,
             sprite_sheet,
         }
     }
-}
-
-impl Creature {
     /**
      * Computes the next state (randomly) for the creature.
      * DOES NOT REPOSITION THE CREATURE. THE COLLIDABLE DOES NOT CHANGE.
      * THE SPRITE STATE DOES NOT CHANGE.
      */
-    pub fn into_next_state<R: Rng + ?Sized>(self, rng: &mut R) -> Self {
+    pub fn with_next_state<R: Rng + ?Sized>(&self, rng: &mut R) -> Self {
         let next_state = self.creature_state.next(rng);
         Creature {
-            id: self.id,
+            id: self.id.clone(),
             radius: self.radius,
             step_size: self.step_size,
             creature_state: next_state,
             position: self.position,
             sprite_state: self.sprite_state,
             sprite_state_duration: self.sprite_state_duration,
-            sprite_sheet: self.sprite_sheet,
+            sprite_sheet: self.sprite_sheet.clone(),
         }
     }
 

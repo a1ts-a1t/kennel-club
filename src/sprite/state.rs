@@ -2,7 +2,7 @@ use std::{f64::consts::PI, ops::Range};
 
 use crate::math::Vec2;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Copy)]
 pub enum State {
     Idle,
     Sleep,
