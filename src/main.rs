@@ -8,7 +8,7 @@ fn main() {
     let mut kennel = Kennel::load(&PathBuf::from("./data"), &mut rng).unwrap();
 
     loop {
-        kennel.pretty_print();
+        kennel.print();
         kennel = kennel
             .next(&mut rng)
             .expect("Error creating the next kennel state");

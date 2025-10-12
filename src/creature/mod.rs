@@ -12,8 +12,6 @@ use crate::{math::Vec2, physics::Collidable};
 mod metadata;
 mod state;
 
-static JITTER_STRENGTH: f64 = 0.2;
-
 #[derive(Debug)]
 pub struct Creature {
     pub id: String,
@@ -24,6 +22,23 @@ pub struct Creature {
     pub sprite_state: sprite::State,
     pub sprite_state_duration: usize,
     pub sprite_sheet: sprite::Sheet,
+}
+
+#[cfg(test)]
+impl From<Metadata> for Creature {
+    fn from(metadata: Metadata) -> Self {
+        let sprite_sheet = sprite::Sheet::new();
+        Creature {
+            id: metadata.id,
+            radius: metadata.radius,
+            step_size: metadata.step_size,
+            creature_state: metadata.initial_state,
+            position: Vec2::zero(),
+            sprite_state: sprite::State::Idle,
+            sprite_state_duration: 0,
+            sprite_sheet,
+        }
+    }
 }
 
 impl Creature {
@@ -40,6 +55,7 @@ impl Creature {
             sprite_sheet,
         }
     }
+
     /**
      * Computes the next state (randomly) for the creature.
      * DOES NOT REPOSITION THE CREATURE. THE COLLIDABLE DOES NOT CHANGE.
@@ -109,24 +125,20 @@ impl Creature {
      * Calculates the next step given the creature's position
      * and a center of mass to trend toward.
      */
-    pub fn get_next_step<R: Rng + ?Sized>(&self, center_of_mass: &Vec2, rng: &mut R) -> Step {
+    pub fn get_next_step(&self, center_of_mass: &Vec2) -> Step {
         match self.creature_state {
             State::Follow => {
                 let delta = center_of_mass - &self.position;
-                let jitter = (delta.norm() * JITTER_STRENGTH) * &Vec2::random(rng);
-
                 Step::new(
                     self.as_collidable(),
-                    (delta + jitter).with_norm(self.step_size),
+                    delta.with_norm(self.step_size),
                 )
             }
             State::Flee => {
                 let delta = &self.position - center_of_mass;
-                let jitter = (delta.norm() * JITTER_STRENGTH) * &Vec2::random(rng);
-
                 Step::new(
                     self.as_collidable(),
-                    (delta + jitter).with_norm(self.step_size),
+                    delta.with_norm(self.step_size),
                 )
             }
             _ => Step::new(self.as_collidable(), Vec2::zero()),
