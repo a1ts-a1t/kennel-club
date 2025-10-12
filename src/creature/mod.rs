@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use image::DynamicImage;
 pub use metadata::Metadata;
@@ -12,13 +12,12 @@ use crate::{math::Vec2, physics::Collidable};
 mod metadata;
 mod state;
 
-static JITTER_STRENGTH: f64 = 0.2;
-
 #[derive(Debug)]
 pub struct Creature {
     pub id: String,
     pub step_size: f64,
     pub radius: f64,
+    pub url: String,
     pub creature_state: State,
     pub position: Vec2,
     pub sprite_state: sprite::State,
@@ -26,13 +25,15 @@ pub struct Creature {
     pub sprite_sheet: sprite::Sheet,
 }
 
-impl Creature {
-    pub fn load(metadata: Metadata, data_dir: &PathBuf) -> Self {
-        let sprite_sheet = metadata.sprite_loader.load(&data_dir.join(&metadata.id));
+#[cfg(test)]
+impl From<Metadata> for Creature {
+    fn from(metadata: Metadata) -> Self {
+        let sprite_sheet = sprite::Sheet::new();
         Creature {
             id: metadata.id,
             radius: metadata.radius,
             step_size: metadata.step_size,
+            url: metadata.url,
             creature_state: metadata.initial_state,
             position: Vec2::zero(),
             sprite_state: sprite::State::Idle,
@@ -40,6 +41,24 @@ impl Creature {
             sprite_sheet,
         }
     }
+}
+
+impl Creature {
+    pub fn load(metadata: Metadata, data_dir: &Path) -> Self {
+        let sprite_sheet = metadata.sprite_loader.load(&data_dir.join(&metadata.id));
+        Creature {
+            id: metadata.id,
+            radius: metadata.radius,
+            step_size: metadata.step_size,
+            url: metadata.url,
+            creature_state: metadata.initial_state,
+            position: Vec2::zero(),
+            sprite_state: sprite::State::Idle,
+            sprite_state_duration: 0,
+            sprite_sheet,
+        }
+    }
+
     /**
      * Computes the next state (randomly) for the creature.
      * DOES NOT REPOSITION THE CREATURE. THE COLLIDABLE DOES NOT CHANGE.
@@ -51,6 +70,7 @@ impl Creature {
             id: self.id.clone(),
             radius: self.radius,
             step_size: self.step_size,
+            url: self.url.clone(),
             creature_state: next_state,
             position: self.position,
             sprite_state: self.sprite_state,
@@ -82,6 +102,7 @@ impl Creature {
             radius: self.radius,
             step_size: self.step_size,
             creature_state: self.creature_state,
+            url: self.url,
             position: new_position,
             sprite_state: new_sprite_state,
             sprite_state_duration: new_sprite_state_duration,
@@ -97,6 +118,7 @@ impl Creature {
             id: self.id,
             radius: self.radius,
             step_size: self.step_size,
+            url: self.url,
             creature_state: self.creature_state,
             position,
             sprite_state: self.sprite_state,
@@ -109,35 +131,24 @@ impl Creature {
      * Calculates the next step given the creature's position
      * and a center of mass to trend toward.
      */
-    pub fn get_next_step<R: Rng + ?Sized>(&self, center_of_mass: &Vec2, rng: &mut R) -> Step {
+    pub fn get_next_step(&self, center_of_mass: &Vec2) -> Step {
         match self.creature_state {
             State::Follow => {
                 let delta = center_of_mass - &self.position;
-                let jitter = (delta.norm() * JITTER_STRENGTH) * &Vec2::random(rng);
-
-                Step::new(
-                    self.as_collidable(),
-                    (delta + jitter).with_norm(self.step_size),
-                )
+                Step::new(self.as_collidable(), delta.with_norm(self.step_size))
             }
             State::Flee => {
                 let delta = &self.position - center_of_mass;
-                let jitter = (delta.norm() * JITTER_STRENGTH) * &Vec2::random(rng);
-
-                Step::new(
-                    self.as_collidable(),
-                    (delta + jitter).with_norm(self.step_size),
-                )
+                Step::new(self.as_collidable(), delta.with_norm(self.step_size))
             }
             _ => Step::new(self.as_collidable(), Vec2::zero()),
         }
     }
 
     pub fn as_collidable(&self) -> Collidable {
-        Collidable::new(self.position.clone(), self.radius)
+        Collidable::new(self.position, self.radius)
     }
 
-    #[allow(dead_code)]
     pub fn sprite(&self) -> &DynamicImage {
         self.sprite_sheet
             .get_sprite(&self.sprite_state, self.sprite_state_duration)

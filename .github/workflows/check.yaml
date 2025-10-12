@@ -1,0 +1,41 @@
+name: Check code base validity
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: rust:1-alpine3.22
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: apk add musl-dev
+
+      - name: Run tests
+        run: cargo test
+
+  validate-metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Validate metadata schema
+        uses: docker://orrosenblatt/validate-json-action:latest
+        env:
+          INPUT_SCHEMA: /metadata_schema.json
+          INPUT_JSONS: /data/metadata.json
+
+      - name: Validate sprite files exist
+        run: |
+          cat data/metadata.json |\
+          jq -r '.[] | { id: .id, sprite: [.sprites | flatten ].[] | .[] } | "./data/\(.id)/\(.sprite)"' |\
+          while read -r f_in; do test -e $f_in || $(echo "$f_in does not exist" && exit 1) ; done
+

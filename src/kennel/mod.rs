@@ -1,5 +1,5 @@
 use std::iter::zip;
-use std::path::PathBuf;
+use std::path::Path;
 
 use image::DynamicImage;
 use itertools::Itertools;
@@ -20,12 +20,12 @@ pub struct Kennel {
 static MAX_INITIALIZATION_RETRIES: u8 = 32;
 
 impl Kennel {
-    pub fn load<R: Rng + ?Sized>(dir: &PathBuf, rng: &mut R) -> Result<Self, String> {
+    pub fn load<R: Rng + ?Sized>(dir: &Path, rng: &mut R) -> Result<Self, String> {
         let json = std::fs::read_to_string(dir.join("metadata.json"))
             .map_err(|_| "Unable to read metadata file")?;
 
-        let metadatas: Vec<creature::Metadata> =
-            serde_json::from_str(&json).map_err(|_| "Unable to deserialize creature metadata")?;
+        let metadatas: Vec<creature::Metadata> = serde_json::from_str(&json)
+            .map_err(|e| format!("Unable to deserialize creature metadata. {}", e.to_string()))?;
 
         let creatures: Vec<Creature> = metadatas
             .into_iter()
@@ -86,24 +86,26 @@ impl Kennel {
         })
     }
 
-    // TODO: i don't really like this as a way to do the thing
     fn center_of_mass(&self) -> Vec2 {
+        if self.creatures.len() <= 1 {
+            return Vec2 { x: 0.5, y: 0.5 };
+        }
+
         let weighted_position_sum = self
             .creatures
             .iter()
             .map(|creature| creature.radius * &creature.position)
-            .reduce(|acc, e| acc + e);
+            .reduce(|acc, e| acc + e)
+            .expect("Error computing center of mass");
 
         let weight_sum = self
             .creatures
             .iter()
             .map(|creature| creature.radius)
-            .reduce(|acc, e| acc + e);
+            .reduce(|acc, e| acc + e)
+            .expect("Error computing center of mass");
 
-        match (weighted_position_sum, weight_sum) {
-            (Some(n), Some(d)) => &n / d,
-            _ => Vec2 { x: 0.5, y: 0.5 },
-        }
+        &weighted_position_sum / weight_sum
     }
 
     /**
@@ -121,7 +123,7 @@ impl Kennel {
 
         let mut arena: Arena = Arena::new();
         for creature in new_creatures.iter() {
-            let step = creature.get_next_step(&center_of_mass, rng);
+            let step = creature.get_next_step(&center_of_mass);
             arena.add(step);
         }
 
@@ -145,7 +147,6 @@ impl Kennel {
      * Each terminal cell will display the number of creatures in that cell.
      * If the number of creatures is greater than 9, it will display `+`.
      */
-    #[allow(dead_code)]
     pub fn pretty_print(&self) {
         let (screen_width, screen_height) = terminal_size().unwrap();
         let cell_width = 1.0 / Into::<f64>::into(screen_width);
@@ -157,7 +158,7 @@ impl Kennel {
             .creatures
             .iter()
             .map(|creature| {
-                let position = creature.position.clone();
+                let position = creature.position;
                 let idx = (position.x / cell_width).floor() as u16;
                 let idy = (position.y / cell_height).floor() as u16;
                 idy * screen_width + idx
@@ -178,7 +179,6 @@ impl Kennel {
         }
     }
 
-    #[allow(dead_code)]
     pub fn print(&self) {
         print!("{esc}c", esc = 27 as char); // clear the screen
         for creature in self.creatures.iter() {
@@ -189,7 +189,6 @@ impl Kennel {
         }
     }
 
-    #[allow(dead_code)]
     pub fn get_sprite(&self, id: &str) -> Option<&DynamicImage> {
         self.creatures
             .iter()
