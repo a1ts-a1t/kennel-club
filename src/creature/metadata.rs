@@ -14,6 +14,7 @@ pub struct Metadata {
     pub id: String,
     pub step_size: f64,
     pub radius: f64,
+    pub url: String,
     #[serde(alias = "sprites")]
     pub sprite_loader: sprite::Loader,
     #[serde(default)]
@@ -33,6 +34,7 @@ impl Metadata {
             id,
             step_size: 0.0,
             radius,
+            url: "".to_string(),
             sprite_loader: sprite::Loader::new(),
             initial_state: State::Idle,
         }

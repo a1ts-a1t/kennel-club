@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 
 use serde::Deserialize;
 
@@ -35,7 +35,7 @@ impl Loader {
         }
     }
 
-    pub fn load(self, path_prefix: &PathBuf) -> Sheet {
+    pub fn load(self, path_prefix: &Path) -> Sheet {
         let mut sheet = Sheet::new();
 
         for path in self.idle.into_iter() {

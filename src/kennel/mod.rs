@@ -1,5 +1,5 @@
 use std::iter::zip;
-use std::path::PathBuf;
+use std::path::Path;
 
 use image::DynamicImage;
 use itertools::Itertools;
@@ -20,12 +20,12 @@ pub struct Kennel {
 static MAX_INITIALIZATION_RETRIES: u8 = 32;
 
 impl Kennel {
-    pub fn load<R: Rng + ?Sized>(dir: &PathBuf, rng: &mut R) -> Result<Self, String> {
+    pub fn load<R: Rng + ?Sized>(dir: &Path, rng: &mut R) -> Result<Self, String> {
         let json = std::fs::read_to_string(dir.join("metadata.json"))
             .map_err(|_| "Unable to read metadata file")?;
 
-        let metadatas: Vec<creature::Metadata> =
-            serde_json::from_str(&json).map_err(|_| "Unable to deserialize creature metadata")?;
+        let metadatas: Vec<creature::Metadata> = serde_json::from_str(&json)
+            .map_err(|e| format!("Unable to deserialize creature metadata. {}", e.to_string()))?;
 
         let creatures: Vec<Creature> = metadatas
             .into_iter()
@@ -88,7 +88,7 @@ impl Kennel {
 
     fn center_of_mass(&self) -> Vec2 {
         if self.creatures.len() <= 1 {
-            return Vec2 { x: 0.5, y: 0.5 }
+            return Vec2 { x: 0.5, y: 0.5 };
         }
 
         let weighted_position_sum = self
@@ -105,7 +105,7 @@ impl Kennel {
             .reduce(|acc, e| acc + e)
             .expect("Error computing center of mass");
 
-        &weighted_position_sum/weight_sum
+        &weighted_position_sum / weight_sum
     }
 
     /**
@@ -158,7 +158,7 @@ impl Kennel {
             .creatures
             .iter()
             .map(|creature| {
-                let position = creature.position.clone();
+                let position = creature.position;
                 let idx = (position.x / cell_width).floor() as u16;
                 let idy = (position.y / cell_height).floor() as u16;
                 idy * screen_width + idx

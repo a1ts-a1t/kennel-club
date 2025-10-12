@@ -40,7 +40,7 @@ impl Step {
      */
     pub fn resolve(&self) -> Collidable {
         Collidable {
-            position: self.collidable.position.clone() + self.delta.clone(),
+            position: self.collidable.position + self.delta,
             radius: self.collidable.radius,
         }
     }

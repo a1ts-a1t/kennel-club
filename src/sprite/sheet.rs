@@ -6,7 +6,7 @@ use image::{DynamicImage, ImageReader};
 
 fn get_sprite(path: PathBuf) -> DynamicImage {
     ImageReader::open(&path)
-        .expect(&format!("Error opening sprite file: {:?}", path))
+        .unwrap_or_else(|_| panic!("Error opening sprite file: {:?}", path))
         .decode()
         .expect("Error decoding sprite")
 }

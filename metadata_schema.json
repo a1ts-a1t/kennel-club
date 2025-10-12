@@ -1,0 +1,105 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "description": "Creature metadata schema for kennel club",
+  "type": "array",
+  "items": {
+      "type": "object",
+      "properties": {
+          "id": {
+              "type": "string"
+          },
+          "step_size": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1
+          },
+          "radius": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+"maximum": 0.5
+          },
+          "url": {
+              "type": "string"
+          },
+          "sprites": {
+              "type": "object",
+              "properties": {
+                  "idle": {
+                      "type": "array",
+                      "items": {
+                          "type": "string"
+                      }
+                  },
+                  "sleep": {
+                      "type": "array",
+                      "items": {
+                          "type": "string"
+                      }
+                  },
+                  "east": {
+                      "type": "array",
+                      "items": {
+                          "type": "string"
+                      }
+                  },
+                  "northeast": {
+                      "type": "array",
+                      "items": {
+                          "type": "string"
+                      }
+                  },
+                  "north": {
+                      "type": "array",
+                      "items": {
+                          "type": "string"
+                      }
+                  },
+                  "northwest": {
+                      "type": "array",
+                      "items": {
+                          "type": "string"
+                      }
+                  },
+                  "west": {
+                      "type": "array",
+                      "items": {
+                          "type": "string"
+                      }
+                  },
+                  "southwest": {
+                      "type": "array",
+                      "items": {
+                          "type": "string"
+                      }
+                  },
+                  "south": {
+                      "type": "array",
+                      "items": {
+                          "type": "string"
+                      }
+                  }
+              },
+              "required": [
+                  "idle",
+                  "sleep",
+                  "east",
+                  "northeast",
+                  "north",
+                  "northwest",
+                  "west",
+                  "southwest",
+                  "south",
+                  "southeast"
+              ]
+          }
+      },
+      "required": [
+          "id",
+          "step_size",
+          "radius",
+          "url",
+          "sprites"
+      ]
+  }
+}
+
