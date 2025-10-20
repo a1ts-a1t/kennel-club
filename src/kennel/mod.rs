@@ -1,11 +1,14 @@
+use std::io::{BufWriter, Cursor};
 use std::iter::zip;
 use std::path::Path;
 
-use image::DynamicImage;
+use image::imageops::overlay;
+use image::{DynamicImage, ImageFormat, RgbaImage};
 use itertools::Itertools;
 use rand::Rng;
 use termion::terminal_size;
 
+use crate::Sprite;
 use crate::creature::{self, Creature};
 use crate::kennel::collision::Arena;
 use crate::math::Vec2;
@@ -25,7 +28,7 @@ impl Kennel {
             .map_err(|_| "Unable to read metadata file")?;
 
         let metadatas: Vec<creature::Metadata> = serde_json::from_str(&json)
-            .map_err(|e| format!("Unable to deserialize creature metadata. {}", e.to_string()))?;
+            .map_err(|e| format!("Unable to deserialize creature metadata. {}", e))?;
 
         let creatures: Vec<Creature> = metadatas
             .into_iter()
@@ -159,8 +162,8 @@ impl Kennel {
             .iter()
             .map(|creature| {
                 let position = creature.position;
-                let idx = (position.x / cell_width).floor() as u16;
-                let idy = (position.y / cell_height).floor() as u16;
+                let idx = (position.x / cell_width) as u16;
+                let idy = (position.y / cell_height) as u16;
                 idy * screen_width + idx
             })
             .counts();
@@ -189,11 +192,56 @@ impl Kennel {
         }
     }
 
-    pub fn get_sprite(&self, id: &str) -> Option<&DynamicImage> {
+    pub fn get_sprite(&self, id: &str) -> Option<&Sprite> {
         self.creatures
             .iter()
             .find(|creature| creature.id == id)
             .map(|creature| creature.sprite())
+    }
+
+    pub fn get_image(
+        &self,
+        canvas_width: u32,
+        canvas_height: u32,
+        image_format: ImageFormat,
+    ) -> Result<Vec<u8>, String> {
+        let mut canvas = RgbaImage::new(canvas_width, canvas_height);
+        let canvas_scale_factor = u32::min(canvas_width, canvas_height) as f64;
+
+        for creature in self.creatures() {
+            let sprite = creature.sprite();
+
+            // scale creature sprite
+            let sprite_scale_factor =
+                2.0 * creature.radius * canvas_scale_factor * sprite.scale_factor();
+            let image = sprite.get_scaled_image(sprite_scale_factor);
+
+            // get canvas position, WRT canvas pixel units
+            let canvas_position = canvas_scale_factor * &creature.position - &creature.radius;
+
+            println!("image.width(): {}", image.width());
+
+            let x_start = (canvas_position.x as u32).clamp(0, canvas_width - image.width() - 1);
+            let y_start = (canvas_position.y as u32).clamp(0, canvas_height - image.height() - 1);
+
+            let image_buffer = image
+                .as_rgba8()
+                .ok_or("Error representing sprite with 32bit RGBA")?;
+            overlay(&mut canvas, image_buffer, x_start.into(), y_start.into());
+        }
+
+        let canvas = DynamicImage::from(canvas);
+        let mut image_buffer = BufWriter::new(Cursor::new(Vec::new()));
+        canvas
+            .write_to(&mut image_buffer, image_format)
+            .map_err(|_| "Error writing kennel image")?;
+
+        let bytes = image_buffer
+            .into_inner()
+            .map(Cursor::into_inner)
+            .map_err(|_| "Error writing kennel image to bytes")?;
+
+        Ok(bytes)
     }
 }
 

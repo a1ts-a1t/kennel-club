@@ -65,6 +65,14 @@ impl Sub for &Vec2 {
     }
 }
 
+impl Sub<&f64> for Vec2 {
+    type Output = Vec2;
+
+    fn sub(self, rhs: &f64) -> Self::Output {
+        &self - &Vec2::new(*rhs, *rhs)
+    }
+}
+
 impl Mul<&Vec2> for f64 {
     type Output = Vec2;
 
