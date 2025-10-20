@@ -1,12 +1,11 @@
 use std::path::Path;
 
-use image::DynamicImage;
 pub use metadata::Metadata;
 use rand::Rng;
 use state::State;
 
 use crate::physics::Step;
-use crate::sprite;
+use crate::{Sprite, sprite};
 use crate::{math::Vec2, physics::Collidable};
 
 mod metadata;
@@ -149,7 +148,7 @@ impl Creature {
         Collidable::new(self.position, self.radius)
     }
 
-    pub fn sprite(&self) -> &DynamicImage {
+    pub fn sprite(&self) -> &Sprite {
         self.sprite_sheet
             .get_sprite(&self.sprite_state, self.sprite_state_duration)
     }

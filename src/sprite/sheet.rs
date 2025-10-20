@@ -1,28 +1,21 @@
 use std::path::PathBuf;
 
+use crate::sprite::base::Sprite;
+
 use super::state::State;
-
-use image::{DynamicImage, ImageReader};
-
-fn get_sprite(path: PathBuf) -> DynamicImage {
-    ImageReader::open(&path)
-        .unwrap_or_else(|_| panic!("Error opening sprite file: {:?}", path))
-        .decode()
-        .expect("Error decoding sprite")
-}
 
 #[derive(Debug, Default, Clone)]
 pub struct Sheet {
-    idle: Vec<DynamicImage>,
-    sleep: Vec<DynamicImage>,
-    east: Vec<DynamicImage>,
-    northeast: Vec<DynamicImage>,
-    north: Vec<DynamicImage>,
-    northwest: Vec<DynamicImage>,
-    west: Vec<DynamicImage>,
-    southwest: Vec<DynamicImage>,
-    south: Vec<DynamicImage>,
-    southeast: Vec<DynamicImage>,
+    idle: Vec<Sprite>,
+    sleep: Vec<Sprite>,
+    east: Vec<Sprite>,
+    northeast: Vec<Sprite>,
+    north: Vec<Sprite>,
+    northwest: Vec<Sprite>,
+    west: Vec<Sprite>,
+    southwest: Vec<Sprite>,
+    south: Vec<Sprite>,
+    southeast: Vec<Sprite>,
 }
 
 impl Sheet {
@@ -42,47 +35,46 @@ impl Sheet {
     }
 
     pub(crate) fn push_idle(&mut self, path: PathBuf) {
-        self.idle.push(get_sprite(path));
+        self.idle.push(Sprite::load(&path));
     }
 
     pub(crate) fn push_sleep(&mut self, path: PathBuf) {
-        self.sleep.push(get_sprite(path));
+        self.sleep.push(Sprite::load(&path));
     }
 
     pub(crate) fn push_east(&mut self, path: PathBuf) {
-        self.east.push(get_sprite(path));
+        self.east.push(Sprite::load(&path));
     }
 
     pub(crate) fn push_northeast(&mut self, path: PathBuf) {
-        self.northeast.push(get_sprite(path));
+        self.northeast.push(Sprite::load(&path));
     }
 
     pub(crate) fn push_north(&mut self, path: PathBuf) {
-        self.north.push(get_sprite(path));
+        self.north.push(Sprite::load(&path));
     }
 
     pub(crate) fn push_northwest(&mut self, path: PathBuf) {
-        self.northwest.push(get_sprite(path));
+        self.northwest.push(Sprite::load(&path));
     }
 
     pub(crate) fn push_west(&mut self, path: PathBuf) {
-        self.west.push(get_sprite(path));
+        self.west.push(Sprite::load(&path));
     }
 
     pub(crate) fn push_southwest(&mut self, path: PathBuf) {
-        self.southwest.push(get_sprite(path));
+        self.southwest.push(Sprite::load(&path));
     }
 
     pub(crate) fn push_south(&mut self, path: PathBuf) {
-        self.south.push(get_sprite(path));
+        self.south.push(Sprite::load(&path));
     }
 
     pub(crate) fn push_southeast(&mut self, path: PathBuf) {
-        self.southeast.push(get_sprite(path));
+        self.southeast.push(Sprite::load(&path));
     }
 
-    #[allow(dead_code)]
-    pub fn get_sprite(&self, sprite_state: &State, frame: usize) -> &DynamicImage {
+    pub fn get_sprite(&self, sprite_state: &State, frame: usize) -> &Sprite {
         let frame_idx = match sprite_state {
             State::Idle => frame % self.idle.len(),
             State::Sleep => frame % self.sleep.len(),
