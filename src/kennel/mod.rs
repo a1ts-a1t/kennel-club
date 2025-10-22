@@ -219,8 +219,6 @@ impl Kennel {
             // get canvas position, WRT canvas pixel units
             let canvas_position = canvas_scale_factor * &creature.position - &creature.radius;
 
-            println!("image.width(): {}", image.width());
-
             let x_start = (canvas_position.x as u32).clamp(0, canvas_width - image.width() - 1);
             let y_start = (canvas_position.y as u32).clamp(0, canvas_height - image.height() - 1);
 
