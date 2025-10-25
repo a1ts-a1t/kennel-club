@@ -1,9 +1,9 @@
 [
     {
-        "id": "test",
+        "id": "alt!",
+        "url": "https://alts-alt.online",
         "step_size": 0.05,
         "radius": 0.1,
-        "url": "https://example.com/",
         "sprites": {
             "idle": [
                 "idle0.gif",
