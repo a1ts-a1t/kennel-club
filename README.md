@@ -1,8 +1,9 @@
-![kennel](https://alts-alt.online/api/kennel-club/img)
 
 ## what's kennel club?
 
-it's a webring where each entry is represented by a little creature running around in a kennel! the image above is the current state of the creatures
+it's a webring where each entry is represented by a little creature running around in a kennel! here's the current state of the creatures
+
+![kennel](https://alts-alt.online/api/kennel-club/img)
 
 ## can i join?
 
