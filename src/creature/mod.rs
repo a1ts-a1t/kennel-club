@@ -14,6 +14,7 @@ mod state;
 #[derive(Debug)]
 pub struct Creature {
     pub id: String,
+    pub display_name: String,
     pub step_size: f64,
     pub radius: f64,
     pub url: String,
@@ -30,6 +31,7 @@ impl From<Metadata> for Creature {
         let sprite_sheet = sprite::Sheet::new();
         Creature {
             id: metadata.id,
+            display_name: metadata.display_name,
             radius: metadata.radius,
             step_size: metadata.step_size,
             url: metadata.url,
@@ -47,6 +49,7 @@ impl Creature {
         let sprite_sheet = metadata.sprite_loader.load(&data_dir.join(&metadata.id));
         Creature {
             id: metadata.id,
+            display_name: metadata.display_name,
             radius: metadata.radius,
             step_size: metadata.step_size,
             url: metadata.url,
@@ -67,6 +70,7 @@ impl Creature {
         let next_state = self.creature_state.next(rng);
         Creature {
             id: self.id.clone(),
+            display_name: self.display_name.clone(),
             radius: self.radius,
             step_size: self.step_size,
             url: self.url.clone(),
@@ -98,6 +102,7 @@ impl Creature {
         let new_position = step.resolve().position;
         Creature {
             id: self.id,
+            display_name: self.display_name,
             radius: self.radius,
             step_size: self.step_size,
             creature_state: self.creature_state,
@@ -115,6 +120,7 @@ impl Creature {
     pub fn set_position(self, position: Vec2) -> Self {
         Creature {
             id: self.id,
+            display_name: self.display_name,
             radius: self.radius,
             step_size: self.step_size,
             url: self.url,

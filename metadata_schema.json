@@ -8,6 +8,9 @@
           "id": {
               "type": "string"
           },
+          "display_name": {
+              "type": "string"
+          },
           "step_size": {
               "type": "number",
               "exclusiveMinimum": 0,

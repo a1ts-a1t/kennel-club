@@ -1,6 +1,7 @@
 [
     {
         "id": "alt",
+        "display_name": "alt!",
         "url": "https://alts-alt.online",
         "step_size": 0.1,
         "radius": 0.05,
