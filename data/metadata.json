@@ -7,44 +7,111 @@
         "radius": 0.05,
         "sprites": {
             "idle": [
-                "idle0.gif",
-                "idle1.gif"
+                "idle_01.png",
+                "idle_02.png",
+                "idle_03.png",
+                "idle_04.png",
+                "idle_05.png"
             ],
             "sleep": [
-                "sleep0.gif",
-                "sleep1.gif"
+                "sleep_01.png",
+                "sleep_02.png",
+                "sleep_03.png",
+                "sleep_04.png",
+                "sleep_05.png",
+                "sleep_06.png"
             ],
             "east": [
-                "east0.gif",
-                "east1.gif"
+                "southeast_01.png",
+                "southeast_02.png",
+                "southeast_03.png",
+                "southeast_04.png",
+                "southeast_05.png",
+                "southeast_06.png",
+                "southeast_07.png",
+                "southeast_08.png"
             ],
             "northeast": [
-                "northeast0.gif",
-                "northeast1.gif"
+                "northeast_01.png",
+                "northeast_02.png",
+                "northeast_03.png",
+                "northeast_04.png",
+                "northeast_05.png",
+                "northeast_06.png",
+                "northeast_07.png",
+                "northeast_08.png",
+                "northeast_09.png",
+                "northeast_10.png",
+                "northeast_11.png"
             ],
             "north": [
-                "north0.gif",
-                "north1.gif"
+                "northeast_01.png",
+                "northeast_02.png",
+                "northeast_03.png",
+                "northeast_04.png",
+                "northeast_05.png",
+                "northeast_06.png",
+                "northeast_07.png",
+                "northeast_08.png",
+                "northeast_09.png",
+                "northeast_10.png",
+                "northeast_11.png"
             ],
             "northwest": [
-                "northwest0.gif",
-                "northwest1.gif"
+                "northwest_01.png",
+                "northwest_02.png",
+                "northwest_03.png",
+                "northwest_04.png",
+                "northwest_05.png",
+                "northwest_06.png",
+                "northwest_07.png",
+                "northwest_08.png",
+                "northwest_09.png",
+                "northwest_10.png",
+                "northwest_11.png"
             ],
             "west": [
-                "west0.gif",
-                "west1.gif"
+                "northwest_01.png",
+                "northwest_02.png",
+                "northwest_03.png",
+                "northwest_04.png",
+                "northwest_05.png",
+                "northwest_06.png",
+                "northwest_07.png",
+                "northwest_08.png",
+                "northwest_09.png",
+                "northwest_10.png",
+                "northwest_11.png"
             ],
             "southwest": [
-                "southwest0.gif",
-                "southwest1.gif"
+                "southwest_01.png",
+                "southwest_02.png",
+                "southwest_03.png",
+                "southwest_04.png",
+                "southwest_05.png",
+                "southwest_06.png",
+                "southwest_07.png",
+                "southwest_08.png"
             ],
             "south": [
-                "south0.gif",
-                "south1.gif"
+                "southwest_01.png",
+                "southwest_02.png",
+                "southwest_03.png",
+                "southwest_04.png",
+                "southwest_05.png",
+                "southwest_06.png",
+                "southwest_07.png",
+                "southwest_08.png"
             ],
             "southeast": [
-                "southeast0.gif",
-                "southeast1.gif"
+                "southeast_01.png",
+                "southeast_02.png",
+                "southeast_03.png",
+                "southeast_04.png",
+                "southeast_05.png",
+                "southeast_06.png",
+                "southeast_07.png",
+                "southeast_08.png"
             ]
         }
     }
