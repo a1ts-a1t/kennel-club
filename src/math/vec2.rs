@@ -129,7 +129,7 @@ impl Vec2 {
     }
 
     pub fn with_norm(&self, norm: f64) -> Self {
-        let scale = self.squared_norm().sqrt() * norm;
+        let scale = norm / self.squared_norm().sqrt();
         scale * self
     }
 
