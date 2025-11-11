@@ -2,7 +2,7 @@ use std::path::Path;
 
 pub use metadata::Metadata;
 use rand::Rng;
-use state::State;
+pub use state::State;
 
 use crate::physics::Step;
 use crate::{Sprite, sprite};
