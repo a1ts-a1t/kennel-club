@@ -8,11 +8,11 @@ use itertools::Itertools;
 use rand::Rng;
 use termion::terminal_size;
 
-use crate::Sprite;
 use crate::creature::{self, Creature};
 use crate::kennel::collision::Arena;
 use crate::math::Vec2;
 use crate::physics::Collidable;
+use crate::{Sprite, sprite};
 
 mod collision;
 
@@ -197,6 +197,18 @@ impl Kennel {
             .iter()
             .find(|creature| creature.id == id)
             .map(|creature| creature.sprite())
+    }
+
+    pub fn get_sprite_by(
+        &self,
+        id: &str,
+        sprite_state: &sprite::State,
+        frame: &usize,
+    ) -> Option<&Sprite> {
+        self.creatures
+            .iter()
+            .find(|creature| creature.id == id)
+            .map(|creature| creature.sprite_sheet.get_sprite(sprite_state, *frame))
     }
 
     pub fn get_image(

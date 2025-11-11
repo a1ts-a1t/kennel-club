@@ -1,7 +1,7 @@
 pub use image::ImageFormat;
 pub use kennel::Kennel;
 pub use rand;
-pub use sprite::Sprite;
+pub use sprite::{Sprite, State};
 
 pub mod creature;
 mod kennel;
