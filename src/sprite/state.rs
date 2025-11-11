@@ -1,4 +1,4 @@
-use std::{f64::consts::PI, ops::Range};
+use std::{f64::consts::PI, fmt, ops::Range};
 
 use crate::math::Vec2;
 
@@ -26,6 +26,32 @@ static SPRITE_STATE_RANGES: [Range<f64>; 7] = [
     ( 3.0 * PI / 8.0)..( 5.0 * PI / 8.0),
     ( 5.0 * PI / 8.0)..( 7.0 * PI / 8.0),
 ];
+
+impl TryFrom<&str> for State {
+    type Error = ();
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value.to_lowercase().as_str() {
+            "idle" => Ok(Self::Idle),
+            "sleep" => Ok(Self::Sleep),
+            "east" => Ok(Self::East),
+            "northeast" => Ok(Self::Northeast),
+            "north" => Ok(Self::North),
+            "northwest" => Ok(Self::Northwest),
+            "west" => Ok(Self::West),
+            "southwest" => Ok(Self::Southwest),
+            "south" => Ok(Self::South),
+            "southeast" => Ok(Self::Southeast),
+            _ => Err(()),
+        }
+    }
+}
+
+impl fmt::Display for State {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", format!("{:?}", self).to_lowercase())
+    }
+}
 
 impl State {
     pub fn from_delta(delta: &Vec2) -> Option<Self> {
