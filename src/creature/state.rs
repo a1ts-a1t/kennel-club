@@ -2,6 +2,7 @@ use rand::{Rng, distr::weighted::WeightedIndex};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
 pub enum State {
     Idle,
     Sleep,
