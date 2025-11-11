@@ -45,17 +45,7 @@
                 "jump_right_11.png"
             ],
             "north": [
-                "jump_right_01.png",
-                "jump_right_02.png",
-                "jump_right_03.png",
-                "jump_right_04.png",
-                "jump_right_05.png",
-                "jump_right_06.png",
-                "jump_right_07.png",
-                "jump_right_08.png",
-                "jump_right_09.png",
-                "jump_right_10.png",
-                "jump_right_11.png"
+                "north.png"
             ],
             "northwest": [
                 "alt_jump_right_01.png",
@@ -94,14 +84,7 @@
                 "alt_running_right_08.png"
             ],
             "south": [
-                "alt_running_right_01.png",
-                "alt_running_right_02.png",
-                "alt_running_right_03.png",
-                "alt_running_right_04.png",
-                "alt_running_right_05.png",
-                "alt_running_right_06.png",
-                "alt_running_right_07.png",
-                "alt_running_right_08.png"
+                "south.png"
             ],
             "southeast": [
                 "running_right_01.png",
