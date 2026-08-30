@@ -3,7 +3,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
+#[derive(Default)]
 pub enum State {
+    #[default]
     Idle,
     Sleep,
     Follow,
@@ -39,11 +41,5 @@ impl State {
             State::Flee =>   [10,  0, 75, 15],
             State::Follow => [10,  0, 15, 75],
         }
-    }
-}
-
-impl Default for State {
-    fn default() -> Self {
-        Self::Idle
     }
 }

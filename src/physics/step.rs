@@ -8,22 +8,6 @@ pub struct Step {
 
 pub static DISTANCE_TOLERANCE: f64 = 0.000000000001;
 
-fn next_down_until<F: Fn(f64) -> bool>(t0: f64, f: F) -> f64 {
-    let mut t = t0;
-    while !f(t0) {
-        t = t.next_down();
-    }
-    t
-}
-
-fn next_up_until<F: Fn(f64) -> bool>(t0: f64, f: F) -> f64 {
-    let mut t = t0;
-    while !f(t0) {
-        t = t.next_up();
-    }
-    t
-}
-
 impl Default for Step {
     fn default() -> Self {
         Step::new(Collidable::default(), Vec2::zero())
@@ -56,7 +40,9 @@ impl Step {
         let lower_bound = self.collidable.radius + DISTANCE_TOLERANCE;
         let upper_bound = 1.0 - self.collidable.radius - DISTANCE_TOLERANCE;
 
-        let t_x = if final_position.x < lower_bound {
+        let t_x = if self.delta.x == 0.0 {
+            1.0
+        } else if final_position.x < lower_bound {
             (lower_bound - current_position.x) / self.delta.x
         } else if final_position.x > upper_bound {
             (upper_bound - current_position.x) / self.delta.x
@@ -64,7 +50,9 @@ impl Step {
             1.0
         };
 
-        let t_y = if final_position.y < lower_bound {
+        let t_y = if self.delta.y == 0.0 {
+            1.0
+        } else if final_position.y < lower_bound {
             (lower_bound - current_position.y) / self.delta.y
         } else if final_position.y > upper_bound {
             (upper_bound - current_position.y) / self.delta.y
@@ -76,11 +64,7 @@ impl Step {
             return None;
         }
 
-        let t = next_down_until(f64::min(t_x, t_y), |t| {
-            !self.lerp(t).resolve().is_out_of_unit_bounds() || t <= 0.0
-        });
-
-        Some(t)
+        Some(f64::min(t_x, t_y))
     }
 
     pub fn steps_collision_time(step1: &Self, step2: &Self) -> Option<f64> {
@@ -107,29 +91,9 @@ impl Step {
             return None;
         }
 
-        let f = |t: f64| a * t * t + b * t + c;
-        let df = |t: f64| 2.0 * a * t + b;
-        let next_time_until = |t0: f64| {
-            if df(t0) * f(t0) > 0.0 {
-                next_down_until(t0, |t| {
-                    !step1
-                        .lerp(t)
-                        .resolve()
-                        .is_colliding(&step2.lerp(t).resolve())
-                })
-            } else {
-                next_up_until(t0, |t| {
-                    !step1
-                        .lerp(t)
-                        .resolve()
-                        .is_colliding(&step2.lerp(t).resolve())
-                })
-            }
-        };
-
-        let d_sq = if d <= 0.0 { 0.0 } else { d.sqrt() };
-        let t1 = next_time_until((-b + d_sq) / (2.0 * a));
-        let t2 = next_time_until((-b - d_sq) / (2.0 * a));
+        let d_sq = d.sqrt();
+        let t1 = (-b + d_sq) / (2.0 * a);
+        let t2 = (-b - d_sq) / (2.0 * a);
 
         let (t_min, t_max) = (f64::min(t1, t2), f64::max(t1, t2));
 

@@ -67,10 +67,14 @@ impl Arena {
         // add in step collisions
         self.steps
             .iter()
-            .filter_map(|step| Step::steps_collision_time(step, &new_step))
             .enumerate()
+            .filter_map(|(idx, step)| {
+                Step::steps_collision_time(step, &new_step).map(|time| (idx, time))
+            })
             .map(|(idx, time)| ArenaCollision::new_steps_collision((idx, new_idx), time))
-            .for_each(|collision| self.heap.push(collision));
+            .for_each(|arena_collision| {
+                self.heap.push(arena_collision);
+            });
 
         self.steps.push(new_step);
     }
@@ -78,9 +82,10 @@ impl Arena {
     pub fn into_vec(self) -> Vec<Step> {
         let mut visited_indices = HashSet::<usize>::new();
         let mut vec: Vec<Step> = vec![Step::default(); self.steps.len()];
+        let mut heap = self.heap;
 
         // resolve all collisions
-        for collision in self.heap.into_iter() {
+        while let Some(collision) = heap.pop() {
             if collision.time() >= 1.0 {
                 break;
             }
