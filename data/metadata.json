@@ -3,7 +3,7 @@
         "id": "alt",
         "display_name": "alt!",
         "url": "https://alts-alt.online",
-        "step_size": 0.1,
+        "step_size": 0.05,
         "radius": 0.05,
         "sprites": {
             "idle": [
@@ -102,7 +102,7 @@
         "id": "stupidtwink",
         "display_name": "stupid twink",
         "url": "https://stupidtwinkcomics.com",
-        "step_size": 0.1,
+        "step_size": 0.05,
         "radius": 0.05,
         "sprites": {
             "idle": [
@@ -201,7 +201,7 @@
         "id": "juniper",
         "display_name": "juniper",
         "url": "https://eyes-like-fire.org",
-        "step_size": 0.1,
+        "step_size": 0.05,
         "radius": 0.05,
         "sprites": {
             "idle": [
@@ -300,7 +300,7 @@
         "id": "bxw",
         "display_name": "bxw",
         "url": "https://b-x-wu.github.io",
-        "step_size": 0.1,
+        "step_size": 0.05,
         "radius": 0.05,
         "sprites": {
             "idle": [

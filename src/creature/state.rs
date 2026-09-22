@@ -36,8 +36,8 @@ impl State {
     #[rustfmt::skip]
     fn weights(&self) -> [u8; 4] {
         match self {
-            State::Idle =>   [75, 15,  5,  5],
-            State::Sleep =>  [10, 90,  0,  0],
+            State::Idle =>   [40, 20, 20, 20],
+            State::Sleep =>  [20, 80,  0,  0],
             State::Flee =>   [10,  0, 75, 15],
             State::Follow => [10,  0, 15, 75],
         }
