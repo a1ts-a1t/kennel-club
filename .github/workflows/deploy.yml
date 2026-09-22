@@ -20,5 +20,5 @@ jobs:
 
       - name: Restart server
         run: |
-          ssh ${{ secrets.USERNAME }}@${{ secrets.HOST_NAME }} "./alts-alt/entrypoint.sh"
+          ssh ${{ secrets.USERNAME }}@${{ secrets.HOST_NAME }} "~/entrypoint.sh"
 
