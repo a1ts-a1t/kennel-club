@@ -1,8 +1,6 @@
 use crate::math::Vec2;
 
-/**
- * A circular collidable object
- */
+/// A circular collidable object
 #[derive(Clone, Copy, Debug)]
 pub struct Collidable {
     pub position: Vec2,
@@ -20,10 +18,8 @@ impl Collidable {
         Collidable { position, radius }
     }
 
-    /**
-     * Returns if two collidables are currently colliding.
-     * (exact bordering does not count as colliding)
-     */
+    /// Returns if two collidables are currently colliding.
+    /// (exact bordering does not count as colliding)
     pub fn is_colliding(&self, other: &Collidable) -> bool {
         let delta = &self.position - &other.position;
         let threshold = self.radius + other.radius;

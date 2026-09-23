@@ -13,9 +13,7 @@ impl Step {
         Self { collidable, delta }
     }
 
-    /**
-     * Resolves the step and adds the delta to the collidable's position.
-     */
+    /// Resolves the step and adds the delta to the collidable's position.
     pub fn resolve(&self) -> Collidable {
         Collidable {
             position: self.collidable.position + self.delta,
@@ -61,10 +59,8 @@ impl Step {
         Some(f64::min(t_x, t_y))
     }
 
-    /**
-     * First time in [0, 1.0) that the two steps' trajectories touch.
-     * None if they stay clear of each other for the whole step.
-     */
+    /// First time in [0, 1.0) that the two steps' trajectories touch.
+    /// None if they stay clear of each other for the whole step.
     pub fn steps_collision_time(step1: &Self, step2: &Self) -> Option<f64> {
         let (t_enter, t_exit) = collision_roots(step1, step2)?;
 
@@ -85,19 +81,15 @@ impl Step {
         Some(t_enter)
     }
 
-    /**
-     * The time at which this step collides with a stationary collidable.
-     */
+    /// The time at which this step collides with a stationary collidable.
     pub fn collidable_collision_time(&self, collidable: &Collidable) -> Option<f64> {
         let other_step = Step::new(*collidable, Vec2::zero());
         Step::steps_collision_time(self, &other_step)
     }
 }
 
-/**
- * Entry and exit times of the two steps' contact shells along their full
- * trajectories, or None if the trajectories never touch
- */
+/// Entry and exit times of the two steps' contact shells along their full
+/// trajectories, or None if the trajectories never touch
 fn collision_roots(step1: &Step, step2: &Step) -> Option<(f64, f64)> {
     let delta_diff = &step1.delta - &step2.delta;
     let position_diff = &step1.collidable.position - &step2.collidable.position;
@@ -127,4 +119,3 @@ fn collision_roots(step1: &Step, step2: &Step) -> Option<(f64, f64)> {
 
     Some((f64::min(t1, t2), f64::max(t1, t2)))
 }
-

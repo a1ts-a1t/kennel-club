@@ -13,10 +13,8 @@ pub enum State {
 }
 
 impl State {
-    /**
-     * Given a current state type, generate the next one
-     * based on some transition matrix.
-     */
+    /// Given a current state type, generate the next one
+    /// based on some transition matrix.
     pub fn next<R: Rng + ?Sized>(&self, rng: &mut R) -> Self {
         let weights = self.weights();
         let distr = WeightedIndex::new(weights).unwrap();
@@ -30,9 +28,7 @@ impl State {
         }
     }
 
-    /**
-     * TODO: can this be configured by users?
-     */
+    /// TODO: can this be configured by users?
     #[rustfmt::skip]
     fn weights(&self) -> [u8; 4] {
         match self {

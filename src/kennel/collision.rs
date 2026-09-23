@@ -61,7 +61,9 @@ impl Arena {
                         .map(|(idx, _)| (idx, steps[idx].clone()));
 
                     for (idx, moving_step) in moving_steps {
-                        if let Some(t) = stopped_step_collision_time(&moving_step, &stopped_step, time) {
+                        if let Some(t) =
+                            stopped_step_collision_time(&moving_step, &stopped_step, time)
+                        {
                             heap.push(Collision::Collidable(idx, t));
                         }
                     }
@@ -180,7 +182,8 @@ mod tests {
 
         let vec = arena.into_vec();
         let expected_position = Vec2::new(0.75, 0.5);
-        let actual_position = vec.first()
+        let actual_position = vec
+            .first()
             .expect("Arena must contain step")
             .resolve()
             .position;
@@ -211,7 +214,8 @@ mod tests {
         arena.add(step2);
         let vec = arena.into_vec();
 
-        let resolved_collidable1 = vec.first()
+        let resolved_collidable1 = vec
+            .first()
             .expect("Arena did not produce enough steps")
             .resolve();
 
@@ -253,7 +257,8 @@ mod tests {
         arena.add(stationary_step);
         let vec = arena.into_vec();
 
-        let resolved_collidable1 = vec.first()
+        let resolved_collidable1 = vec
+            .first()
             .expect("Arena did not produce enough steps")
             .resolve();
 

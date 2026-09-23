@@ -5,10 +5,8 @@ use crate::{creature::state::State, sprite};
 #[cfg(test)]
 use rand::{Rng, distr::Alphabetic};
 
-/**
- * Metadata that's loaded in from JSON
- * Do not directly construct.
- */
+/// Metadata that's loaded in from JSON
+/// Do not directly construct.
 #[derive(Debug, Deserialize)]
 pub struct Metadata {
     pub id: String,

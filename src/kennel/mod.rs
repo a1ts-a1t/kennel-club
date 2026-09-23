@@ -38,11 +38,9 @@ impl Kennel {
         Kennel::new(creatures, rng)
     }
 
-    /**
-     * Initialize a new kennel and reposition creatures such that no two are colliding
-     * and none are colliding within the walls.
-     * I know dart throwing is not sexy, but give me a break, this is like. n=10 or something.
-     */
+    /// Initialize a new kennel and reposition creatures such that no two are colliding
+    /// and none are colliding within the walls.
+    /// I know dart throwing is not sexy, but give me a break, this is like. n=10 or something.
     pub fn new<R: Rng + ?Sized>(creatures: Vec<Creature>, rng: &mut R) -> Result<Self, String> {
         let mut repositioned_creatures: Vec<Creature> = vec![];
         for current_creature in creatures.into_iter() {
@@ -111,11 +109,9 @@ impl Kennel {
         &weighted_position_sum / weight_sum
     }
 
-    /**
-     * creates a kennel that is in the next time step.
-     * This moves each creature forward a time step
-     * and de-collides them.
-     */
+    /// creates a kennel that is in the next time step.
+    /// This moves each creature forward a time step
+    /// and de-collides them.
     pub fn next<R: Rng + ?Sized>(&self, rng: &mut R) -> Result<Self, String> {
         let center_of_mass = self.center_of_mass();
         let new_creatures: Vec<_> = self
@@ -144,12 +140,10 @@ impl Kennel {
         self.creatures.iter().collect()
     }
 
-    /**
-     * Prints the kennel out to the terminal.
-     * Each terminal cell represents a chunk of the kennel.
-     * Each terminal cell will display the number of creatures in that cell.
-     * If the number of creatures is greater than 9, it will display `+`.
-     */
+    /// Prints the kennel out to the terminal.
+    /// Each terminal cell represents a chunk of the kennel.
+    /// Each terminal cell will display the number of creatures in that cell.
+    /// If the number of creatures is greater than 9, it will display `+`.
     pub fn pretty_print(&self) {
         let (screen_width, screen_height) = terminal_size().unwrap();
         let cell_width = 1.0 / Into::<f64>::into(screen_width);

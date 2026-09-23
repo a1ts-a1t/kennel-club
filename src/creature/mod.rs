@@ -61,11 +61,9 @@ impl Creature {
         }
     }
 
-    /**
-     * Computes the next state (randomly) for the creature.
-     * DOES NOT REPOSITION THE CREATURE. THE COLLIDABLE DOES NOT CHANGE.
-     * THE SPRITE STATE DOES NOT CHANGE.
-     */
+    /// Computes the next state (randomly) for the creature.
+    /// DOES NOT REPOSITION THE CREATURE. THE COLLIDABLE DOES NOT CHANGE.
+    /// THE SPRITE STATE DOES NOT CHANGE.
     pub fn with_next_state<R: Rng + ?Sized>(&self, rng: &mut R) -> Self {
         let next_state = self.creature_state.next(rng);
         Creature {
@@ -82,10 +80,8 @@ impl Creature {
         }
     }
 
-    /**
-     * Has the creature take a step in the direction.
-     * Changes the sprite.
-     */
+    /// Has the creature take a step in the direction.
+    /// Changes the sprite.
     pub fn step(self, step: Step) -> Self {
         let new_sprite_state = match sprite::State::from_delta(&step.delta) {
             Some(s) => s,
@@ -114,9 +110,7 @@ impl Creature {
         }
     }
 
-    /**
-     * Set position field WITHOUT CHANGING ANYTHING ELSE
-     */
+    /// Set position field WITHOUT CHANGING ANYTHING ELSE
     pub fn set_position(self, position: Vec2) -> Self {
         Creature {
             id: self.id,
@@ -132,10 +126,8 @@ impl Creature {
         }
     }
 
-    /**
-     * Calculates the next step given the creature's position
-     * and a center of mass to trend toward.
-     */
+    /// Calculates the next step given the creature's position
+    /// and a center of mass to trend toward.
     pub fn get_next_step(&self, center_of_mass: &Vec2) -> Step {
         match self.creature_state {
             State::Follow => {
