@@ -40,16 +40,6 @@ impl Arena {
         // the time each step stopped at (none if still in motion)
         let mut stopped: Vec<Option<f64>> = vec![None; steps.len()];
 
-        // iterator of steps that are still in motion
-        let moving_steps = |stopped: &Vec<Option<f64>>| -> Vec<(usize, Step)> {
-            stopped
-                .iter()
-                .enumerate()
-                .filter(|(_, stop_time)| stop_time.is_none())
-                .map(|(idx, _)| (idx, steps[idx].clone()))
-                .collect()
-        };
-
         while let Some(collision) = heap.pop() {
             let time = collision.time();
             if time >= 1.0 {
@@ -63,18 +53,17 @@ impl Arena {
                         None => Some(time),
                     };
 
-                    let stopped_step = &steps[idx].lerp(time).resolve();
+                    let stopped_step = steps[idx].lerp(time).resolve();
+                    let moving_steps = stopped
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, stop_time)| stop_time.is_none())
+                        .map(|(idx, _)| (idx, steps[idx].clone()));
 
-                    let stopped_step_collisions =
-                        moving_steps(&stopped)
-                            .into_iter()
-                            .filter_map(|(idx, step)| {
-                                stopped_step_collision_time(&step, stopped_step, time)
-                                    .map(|t| (idx, t))
-                            });
-
-                    for (idx, t) in stopped_step_collisions {
-                        heap.push(Collision::Collidable(idx, t));
+                    for (idx, moving_step) in moving_steps {
+                        if let Some(t) = stopped_step_collision_time(&moving_step, &stopped_step, time) {
+                            heap.push(Collision::Collidable(idx, t));
+                        }
                     }
                 }
                 Collision::Step((idx1, idx2), _) => {
@@ -86,23 +75,26 @@ impl Arena {
                         _ => continue, // one of the stps has already stopped at some point
                     }
 
-                    let stopped_step1 = &steps[idx1].lerp(time).resolve();
-                    let stopped_step2 = &steps[idx2].lerp(time).resolve();
+                    let stopped_step1 = steps[idx1].lerp(time).resolve();
+                    let stopped_step2 = steps[idx2].lerp(time).resolve();
+                    let moving_steps = stopped
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, stop_time)| stop_time.is_none())
+                        .map(|(idx, _)| (idx, steps[idx].clone()));
 
-                    let stopped_step_collisions =
-                        moving_steps(&stopped).into_iter().flat_map(|(idx, step)| {
-                            let t1 = stopped_step_collision_time(&step, stopped_step1, time);
-                            let t2 = stopped_step_collision_time(&step, stopped_step2, time);
+                    for (idx, moving_step) in moving_steps {
+                        let t1 = stopped_step_collision_time(&moving_step, &stopped_step1, time);
+                        let t2 = stopped_step_collision_time(&moving_step, &stopped_step2, time);
+                        let collision_time = match (t1, t2) {
+                            (None, None) => None,
+                            (None, Some(t)) | (Some(t), None) => Some(t),
+                            (Some(t1), Some(t2)) => Some(f64::min(t1, t2)),
+                        };
 
-                            match (t1, t2) {
-                                (None, None) => vec![],
-                                (None, Some(t)) | (Some(t), None) => vec![(idx, t)],
-                                (Some(t1), Some(t2)) => vec![(idx, f64::min(t1, t2))],
-                            }
-                        });
-
-                    for (idx, t) in stopped_step_collisions {
-                        heap.push(Collision::Collidable(idx, t));
+                        if let Some(t) = collision_time {
+                            heap.push(Collision::Collidable(idx, t));
+                        }
                     }
                 }
             }

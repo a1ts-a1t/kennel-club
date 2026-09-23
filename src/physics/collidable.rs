@@ -3,7 +3,7 @@ use crate::math::Vec2;
 /**
  * A circular collidable object
  */
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct Collidable {
     pub position: Vec2,
     pub radius: f64,

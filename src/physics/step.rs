@@ -6,13 +6,7 @@ pub struct Step {
     pub delta: Vec2,
 }
 
-pub static DISTANCE_TOLERANCE: f64 = 0.000000000001;
-
-impl Default for Step {
-    fn default() -> Self {
-        Step::new(Collidable::default(), Vec2::zero())
-    }
-}
+pub const DISTANCE_TOLERANCE: f64 = 1e-12;
 
 impl Step {
     pub fn new(collidable: Collidable, delta: Vec2) -> Self {
@@ -30,7 +24,7 @@ impl Step {
     }
 
     pub fn lerp(&self, t: f64) -> Self {
-        Self::new(self.collidable.clone(), t * &self.delta)
+        Self::new(self.collidable, t * &self.delta)
     }
 
     pub fn unit_bound_collision_time(&self) -> Option<f64> {
@@ -95,7 +89,7 @@ impl Step {
      * The time at which this step collides with a stationary collidable.
      */
     pub fn collidable_collision_time(&self, collidable: &Collidable) -> Option<f64> {
-        let other_step = Step::new(collidable.clone(), Vec2::zero());
+        let other_step = Step::new(*collidable, Vec2::zero());
         Step::steps_collision_time(self, &other_step)
     }
 }
@@ -134,11 +128,3 @@ fn collision_roots(step1: &Step, step2: &Step) -> Option<(f64, f64)> {
     Some((f64::min(t1, t2), f64::max(t1, t2)))
 }
 
-impl From<Collidable> for Step {
-    fn from(value: Collidable) -> Self {
-        Step {
-            collidable: value,
-            delta: Vec2::zero(),
-        }
-    }
-}

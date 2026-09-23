@@ -20,7 +20,7 @@ pub struct Kennel {
     creatures: Vec<Creature>,
 }
 
-static MAX_INITIALIZATION_RETRIES: u8 = 32;
+const MAX_INITIALIZATION_RETRIES: u8 = 32;
 
 impl Kennel {
     pub fn load<R: Rng + ?Sized>(dir: &Path, rng: &mut R) -> Result<Self, String> {
@@ -261,7 +261,7 @@ mod tests {
     use crate::creature::Metadata;
     use rand::{SeedableRng, rngs::SmallRng};
 
-    static RNG_SEED: u64 = 1;
+    const RNG_SEED: u64 = 1;
 
     #[test]
     fn test_new_fail() {

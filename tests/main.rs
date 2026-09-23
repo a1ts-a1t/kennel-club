@@ -4,12 +4,12 @@ use image::ImageFormat;
 use kennel_club::Kennel;
 use rand::{SeedableRng, rngs::SmallRng};
 
-static RNG_SEED: u64 = 1;
+const RNG_SEED: u64 = 1;
 
 #[test]
 fn test_kennel() {
-    static STEP_COUNT: usize = 5_000;
-    static SEED_COUNT: u64 = 16;
+    const STEP_COUNT: usize = 5_000;
+    const SEED_COUNT: u64 = 16;
 
     for seed in 0..SEED_COUNT {
         let mut rng = SmallRng::seed_from_u64(seed);
