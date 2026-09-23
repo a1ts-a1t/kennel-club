@@ -296,4 +296,40 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn test_next_never_overlaps() {
+        let mut rng = SmallRng::seed_from_u64(RNG_SEED);
+        let metadata: Vec<_> = (1..=10)
+            .into_iter()
+            .map(|radius| Metadata::mock((radius as f64) / 100.0).into())
+            .collect();
+        let mut kennel = Kennel::new(metadata, &mut rng).unwrap();
+
+        for _ in 0..2000 {
+            kennel = kennel.next(&mut rng).unwrap();
+            let collidables: Vec<_> = kennel
+                .creatures
+                .iter()
+                .map(|creature| creature.as_collidable())
+                .collect();
+
+            for collidable in &collidables {
+                assert!(
+                    !collidable.is_out_of_unit_bounds(),
+                    "creature escaped the kennel: {:?}",
+                    collidable.position
+                );
+            }
+            for combination in collidables.iter().combinations(2) {
+                let (c1, c2) = (combination[0], combination[1]);
+                assert!(
+                    !c1.is_colliding(c2),
+                    "creatures overlapped: {:?} vs {:?}",
+                    c1.position,
+                    c2.position
+                );
+            }
+        }
+    }
 }

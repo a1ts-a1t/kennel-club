@@ -67,52 +67,71 @@ impl Step {
         Some(f64::min(t_x, t_y))
     }
 
+    /**
+     * First time in [0, 1.0) that the two steps' trajectories touch.
+     * None if they stay clear of each other for the whole step.
+     */
     pub fn steps_collision_time(step1: &Self, step2: &Self) -> Option<f64> {
-        let delta_diff = &step1.delta - &step2.delta;
-        let position_diff = &step1.collidable.position - &step2.collidable.position;
-        let radius_sum = step1.collidable.radius + step2.collidable.radius;
-
-        let a = delta_diff.squared_norm();
-
-        // the delta vectors are the same
-        // if they weren't colliding before, they won't now
-        if a == 0.0 {
-            return None;
-        }
-
-        // add in tolerance for extra wiggle room
-        let c = position_diff.squared_norm() - radius_sum * radius_sum - DISTANCE_TOLERANCE;
-        let b = 2.0 * Vec2::dot(&delta_diff, &position_diff);
-        let d = b * b - 4.0 * a * c;
-
-        // no roots so no collision
-        // return ok
-        if d < 0.0 {
-            return None;
-        }
-
-        let d_sq = d.sqrt();
-        let t1 = (-b + d_sq) / (2.0 * a);
-        let t2 = (-b - d_sq) / (2.0 * a);
-
-        let (t_min, t_max) = (f64::min(t1, t2), f64::max(t1, t2));
+        let (t_enter, t_exit) = collision_roots(step1, step2)?;
 
         // roots are out of range
         // during entire time step, there is no collision
-        if t_max < 0.0 || t_min >= 1.0 {
+        if t_exit < 0.0 || t_enter >= 1.0 {
             return None;
         }
 
-        // during the entire time step, it is colliding
-        // this should really not be the case given the assumptions
-        // let them just pass through each other
-        // and mark them as no collision
-        if t_min < 0.0 && t_max > 1.0 {
-            return None;
+        // negative time at entry means that the steps started inside each other
+        // if they're getting farther, let them get farther
+        if t_enter < 0.0 {
+            // the roots sum to -b/a, so a positive sum means closing in
+            let approaching = t_enter + t_exit > 0.0;
+            return Some(if approaching { 0.0 } else { t_exit });
         }
 
-        Some(if t_min < 0.0 { t_max } else { t_min })
+        Some(t_enter)
     }
+
+    /**
+     * The time at which this step collides with a stationary collidable.
+     */
+    pub fn collidable_collision_time(&self, collidable: &Collidable) -> Option<f64> {
+        let other_step = Step::new(collidable.clone(), Vec2::zero());
+        Step::steps_collision_time(self, &other_step)
+    }
+}
+
+/**
+ * Entry and exit times of the two steps' contact shells along their full
+ * trajectories, or None if the trajectories never touch
+ */
+fn collision_roots(step1: &Step, step2: &Step) -> Option<(f64, f64)> {
+    let delta_diff = &step1.delta - &step2.delta;
+    let position_diff = &step1.collidable.position - &step2.collidable.position;
+    let radius_sum = step1.collidable.radius + step2.collidable.radius;
+
+    let a = delta_diff.squared_norm();
+
+    // the delta vectors are the same
+    // if they weren't colliding before, they won't now
+    if a == 0.0 {
+        return None;
+    }
+
+    // add in tolerance for extra wiggle room
+    let c = position_diff.squared_norm() - radius_sum * radius_sum - DISTANCE_TOLERANCE;
+    let b = 2.0 * Vec2::dot(&delta_diff, &position_diff);
+    let d = b * b - 4.0 * a * c;
+
+    // no roots so the trajectories never touch
+    if d < 0.0 {
+        return None;
+    }
+
+    let d_sq = d.sqrt();
+    let t1 = (-b + d_sq) / (2.0 * a);
+    let t2 = (-b - d_sq) / (2.0 * a);
+
+    Some((f64::min(t1, t2), f64::max(t1, t2)))
 }
 
 impl From<Collidable> for Step {

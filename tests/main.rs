@@ -8,14 +8,44 @@ static RNG_SEED: u64 = 1;
 
 #[test]
 fn test_kennel() {
-    let mut rng = SmallRng::seed_from_u64(RNG_SEED);
-    let dir = PathBuf::from("./data");
-    let mut kennel = Kennel::load(&dir, &mut rng).expect("Error during kennel initialization");
+    static STEP_COUNT: usize = 5_000;
+    static SEED_COUNT: u64 = 16;
 
-    for _ in 0..1000000 {
-        kennel = kennel
-            .next(&mut rng)
-            .expect("Error during kennel iteration");
+    for seed in 0..SEED_COUNT {
+        let mut rng = SmallRng::seed_from_u64(seed);
+        let dir = PathBuf::from("./data");
+        let mut kennel = Kennel::load(&dir, &mut rng).expect("Error during kennel initialization");
+
+        for step in 0..STEP_COUNT {
+            kennel = kennel
+                .next(&mut rng)
+                .expect("Error during kennel iteration");
+
+            let creatures = kennel.creatures();
+            for (i, creature) in creatures.iter().enumerate() {
+                let collidable = creature.as_collidable();
+                assert!(
+                    !collidable.is_out_of_unit_bounds(),
+                    "seed {seed} step {step}: {} escaped the kennel at {:?}",
+                    creature.id,
+                    creature.position
+                );
+
+                for other in creatures.iter().skip(i + 1) {
+                    let other_collidable = other.as_collidable();
+                    assert!(
+                        !collidable.is_colliding(&other_collidable),
+                        "seed {seed} step {step}: {} and {} overlapped by {:.6} at {:?} vs {:?}",
+                        creature.id,
+                        other.id,
+                        creature.radius + other.radius
+                            - (&creature.position - &other.position).norm(),
+                        creature.position,
+                        other.position
+                    );
+                }
+            }
+        }
     }
 }
 
