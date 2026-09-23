@@ -288,7 +288,7 @@ mod tests {
 
         for collidable_combination in collidable_combinations {
             let (c1, c2) = (
-                collidable_combination.get(0).unwrap(),
+                collidable_combination.first().unwrap(),
                 collidable_combination.get(1).unwrap(),
             );
             if c1.is_colliding(c2) {

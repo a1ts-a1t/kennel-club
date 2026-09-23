@@ -188,8 +188,7 @@ mod tests {
 
         let vec = arena.into_vec();
         let expected_position = Vec2::new(0.75, 0.5);
-        let actual_position = vec
-            .get(0)
+        let actual_position = vec.first()
             .expect("Arena must contain step")
             .resolve()
             .position;
@@ -210,18 +209,17 @@ mod tests {
         let upper_bound = 1.0 - radius - DISTANCE_TOLERANCE;
 
         let collidable1 = Collidable::new(Vec2::new(lower_bound, lower_bound), radius);
-        let step1 = Step::new(collidable1, delta.clone());
+        let step1 = Step::new(collidable1, delta);
 
         let collidable2 = Collidable::new(Vec2::new(upper_bound, upper_bound), radius);
-        let step2 = Step::new(collidable2, -delta.clone());
+        let step2 = Step::new(collidable2, -delta);
 
         let mut arena = Arena::new();
         arena.add(step1);
         arena.add(step2);
         let vec = arena.into_vec();
 
-        let resolved_collidable1 = vec
-            .get(0)
+        let resolved_collidable1 = vec.first()
             .expect("Arena did not produce enough steps")
             .resolve();
 
@@ -249,10 +247,10 @@ mod tests {
         let upper_bound = 1.0 - radius - DISTANCE_TOLERANCE;
 
         let collidable1 = Collidable::new(Vec2::new(lower_bound, lower_bound), radius);
-        let step1 = Step::new(collidable1, delta.clone());
+        let step1 = Step::new(collidable1, delta);
 
         let collidable2 = Collidable::new(Vec2::new(upper_bound, upper_bound), radius);
-        let step2 = Step::new(collidable2, -delta.clone());
+        let step2 = Step::new(collidable2, -delta);
 
         let stationary_collidable = Collidable::new(Vec2::new(0.5, 0.5), radius);
         let stationary_step = Step::new(stationary_collidable, Vec2::new(0.0, 0.0));
@@ -263,8 +261,7 @@ mod tests {
         arena.add(stationary_step);
         let vec = arena.into_vec();
 
-        let resolved_collidable1 = vec
-            .get(0)
+        let resolved_collidable1 = vec.first()
             .expect("Arena did not produce enough steps")
             .resolve();
 
