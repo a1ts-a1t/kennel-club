@@ -196,7 +196,7 @@ impl Kennel {
     pub fn get_sprite_by(
         &self,
         id: &str,
-        sprite_state: &sprite::State,
+        sprite_state: sprite::State,
         frame: &usize,
     ) -> Option<&Sprite> {
         self.creatures

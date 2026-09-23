@@ -21,7 +21,7 @@ pub struct Creature {
     pub creature_state: State,
     pub position: Vec2,
     pub sprite_state: sprite::State,
-    pub sprite_state_duration: usize,
+    pub sprite_frame: usize,
     pub sprite_sheet: sprite::Sheet,
 }
 
@@ -38,7 +38,7 @@ impl From<Metadata> for Creature {
             creature_state: metadata.initial_state,
             position: Vec2::zero(),
             sprite_state: sprite::State::Idle,
-            sprite_state_duration: 0,
+            sprite_frame: 0,
             sprite_sheet,
         }
     }
@@ -56,7 +56,7 @@ impl Creature {
             creature_state: metadata.initial_state,
             position: Vec2::zero(),
             sprite_state: sprite::State::Idle,
-            sprite_state_duration: 0,
+            sprite_frame: 0,
             sprite_sheet,
         }
     }
@@ -75,7 +75,7 @@ impl Creature {
             creature_state: next_state,
             position: self.position,
             sprite_state: self.sprite_state,
-            sprite_state_duration: self.sprite_state_duration,
+            sprite_frame: self.sprite_frame,
             sprite_sheet: self.sprite_sheet.clone(),
         }
     }
@@ -89,8 +89,8 @@ impl Creature {
             None => sprite::State::Idle,
         };
 
-        let new_sprite_state_duration = if new_sprite_state == self.sprite_state {
-            self.sprite_state_duration + 1
+        let new_sprite_frame = if new_sprite_state == self.sprite_state {
+            (self.sprite_frame + 1) % self.sprite_sheet.get_frame_count(self.sprite_state)
         } else {
             0
         };
@@ -105,7 +105,7 @@ impl Creature {
             url: self.url,
             position: new_position,
             sprite_state: new_sprite_state,
-            sprite_state_duration: new_sprite_state_duration,
+            sprite_frame: new_sprite_frame,
             sprite_sheet: self.sprite_sheet,
         }
     }
@@ -121,7 +121,7 @@ impl Creature {
             creature_state: self.creature_state,
             position,
             sprite_state: self.sprite_state,
-            sprite_state_duration: self.sprite_state_duration,
+            sprite_frame: self.sprite_frame,
             sprite_sheet: self.sprite_sheet,
         }
     }
@@ -148,6 +148,6 @@ impl Creature {
 
     pub fn sprite(&self) -> &Sprite {
         self.sprite_sheet
-            .get_sprite(&self.sprite_state, self.sprite_state_duration)
+            .get_sprite(self.sprite_state, self.sprite_frame)
     }
 }

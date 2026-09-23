@@ -74,24 +74,22 @@ impl Sheet {
         self.southeast.push(Sprite::load(&path));
     }
 
-    pub fn get_info(&self) -> Vec<(State, usize)> {
-        let idle = (State::Idle, self.idle.len());
-        let sleep = (State::Sleep, self.sleep.len());
-        let east = (State::East, self.east.len());
-        let northeast = (State::Northeast, self.northeast.len());
-        let north = (State::North, self.north.len());
-        let northwest = (State::Northwest, self.northwest.len());
-        let west = (State::West, self.west.len());
-        let southwest = (State::Southwest, self.southwest.len());
-        let south = (State::South, self.south.len());
-        let southeast = (State::Southeast, self.southeast.len());
-
-        vec![
-            idle, sleep, east, northeast, north, northwest, west, southwest, south, southeast,
-        ]
+    pub fn get_frame_count(&self, sprite_state: State) -> usize {
+        match sprite_state {
+            State::Idle => self.idle.len(),
+            State::Sleep => self.sleep.len(),
+            State::East => self.east.len(),
+            State::Northeast => self.northeast.len(),
+            State::North => self.north.len(),
+            State::Northwest => self.northwest.len(),
+            State::West => self.west.len(),
+            State::Southwest => self.southwest.len(),
+            State::South => self.south.len(),
+            State::Southeast => self.southwest.len(),
+        }
     }
 
-    pub fn get_sprite(&self, sprite_state: &State, frame: usize) -> &Sprite {
+    pub fn get_sprite(&self, sprite_state: State, frame: usize) -> &Sprite {
         let frame_idx = match sprite_state {
             State::Idle => frame % self.idle.len(),
             State::Sleep => frame % self.sleep.len(),
