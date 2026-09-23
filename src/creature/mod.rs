@@ -89,10 +89,11 @@ impl Creature {
             None => sprite::State::Idle,
         };
 
-        let new_sprite_frame = if new_sprite_state == self.sprite_state {
-            (self.sprite_frame + 1) % self.sprite_sheet.get_frame_count(self.sprite_state)
-        } else {
+        let frame_count = self.sprite_sheet.get_frame_count(self.sprite_state);
+        let new_sprite_frame = if new_sprite_state != self.sprite_state || frame_count == 0 {
             0
+        } else {
+            (self.sprite_frame + 1) % frame_count
         };
 
         let new_position = step.resolve().position;

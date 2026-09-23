@@ -85,7 +85,7 @@ impl Sheet {
             State::West => self.west.len(),
             State::Southwest => self.southwest.len(),
             State::South => self.south.len(),
-            State::Southeast => self.southwest.len(),
+            State::Southeast => self.southeast.len(),
         }
     }
 
