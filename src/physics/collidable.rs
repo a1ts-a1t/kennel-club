@@ -21,7 +21,7 @@ impl Collidable {
     /// Returns if two collidables are currently colliding.
     /// (exact bordering does not count as colliding)
     pub fn is_colliding(&self, other: &Collidable) -> bool {
-        let delta = &self.position - &other.position;
+        let delta = self.position - other.position;
         let threshold = self.radius + other.radius;
 
         let delta2 = delta.squared_norm();

@@ -22,13 +22,13 @@ impl Step {
     }
 
     pub fn lerp(&self, t: f64) -> Self {
-        Self::new(self.collidable, t * &self.delta)
+        Self::new(self.collidable, t * self.delta)
     }
 
     pub fn unit_bound_collision_time(&self) -> Option<f64> {
-        let current_position = &self.collidable.position;
+        let current_position = self.collidable.position;
 
-        let final_position = current_position + &self.delta;
+        let final_position = current_position + self.delta;
         let lower_bound = self.collidable.radius + DISTANCE_TOLERANCE;
         let upper_bound = 1.0 - self.collidable.radius - DISTANCE_TOLERANCE;
 
@@ -91,8 +91,8 @@ impl Step {
 /// Entry and exit times of the two steps' contact shells along their full
 /// trajectories, or None if the trajectories never touch
 fn collision_roots(step1: &Step, step2: &Step) -> Option<(f64, f64)> {
-    let delta_diff = &step1.delta - &step2.delta;
-    let position_diff = &step1.collidable.position - &step2.collidable.position;
+    let delta_diff = step1.delta - step2.delta;
+    let position_diff = step1.collidable.position - step2.collidable.position;
     let radius_sum = step1.collidable.radius + step2.collidable.radius;
 
     let a = delta_diff.squared_norm();
@@ -105,7 +105,7 @@ fn collision_roots(step1: &Step, step2: &Step) -> Option<(f64, f64)> {
 
     // add in tolerance for extra wiggle room
     let c = position_diff.squared_norm() - radius_sum * radius_sum - DISTANCE_TOLERANCE;
-    let b = 2.0 * Vec2::dot(&delta_diff, &position_diff);
+    let b = 2.0 * Vec2::dot(delta_diff, position_diff);
     let d = b * b - 4.0 * a * c;
 
     // no roots so the trajectories never touch

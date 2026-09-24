@@ -83,7 +83,7 @@ impl Creature {
     /// Has the creature take a step in the direction.
     /// Changes the sprite.
     pub fn step(self, step: Step) -> Self {
-        let new_sprite_state = match sprite::State::from_delta(&step.delta) {
+        let new_sprite_state = match sprite::State::from_delta(step.delta) {
             Some(s) => s,
             None if self.creature_state == State::Sleep => sprite::State::Sleep,
             None => sprite::State::Idle,
@@ -129,14 +129,14 @@ impl Creature {
 
     /// Calculates the next step given the creature's position
     /// and a center of mass to trend toward.
-    pub fn get_next_step(&self, center_of_mass: &Vec2) -> Step {
+    pub fn get_next_step(&self, center_of_mass: Vec2) -> Step {
         match self.creature_state {
             State::Follow => {
-                let delta = center_of_mass - &self.position;
+                let delta = center_of_mass - self.position;
                 Step::new(self.as_collidable(), delta.with_norm(self.step_size))
             }
             State::Flee => {
-                let delta = &self.position - center_of_mass;
+                let delta = self.position - center_of_mass;
                 Step::new(self.as_collidable(), delta.with_norm(self.step_size))
             }
             _ => Step::new(self.as_collidable(), Vec2::zero()),

@@ -95,7 +95,7 @@ impl Kennel {
         let weighted_position_sum = self
             .creatures
             .iter()
-            .map(|creature| creature.radius * &creature.position)
+            .map(|creature| creature.radius * creature.position)
             .reduce(|acc, e| acc + e)
             .expect("Error computing center of mass");
 
@@ -106,7 +106,7 @@ impl Kennel {
             .reduce(|acc, e| acc + e)
             .expect("Error computing center of mass");
 
-        &weighted_position_sum / weight_sum
+        weighted_position_sum / weight_sum
     }
 
     /// creates a kennel that is in the next time step.
@@ -122,7 +122,7 @@ impl Kennel {
 
         let mut arena: Arena = Arena::new();
         for creature in new_creatures.iter() {
-            let step = creature.get_next_step(&center_of_mass);
+            let step = creature.get_next_step(center_of_mass);
             arena.add(step);
         }
 
@@ -223,7 +223,7 @@ impl Kennel {
             let image = sprite.get_scaled_image(sprite_scale_factor);
 
             // get canvas position, WRT canvas pixel units
-            let canvas_position = canvas_scale_factor * &creature.position - &creature.radius;
+            let canvas_position = canvas_scale_factor * creature.position - creature.radius;
 
             let x_start = (canvas_position.x as u32).clamp(0, canvas_width - image.width() - 1);
             let y_start = (canvas_position.y as u32).clamp(0, canvas_height - image.height() - 1);

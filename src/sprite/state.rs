@@ -54,7 +54,7 @@ impl fmt::Display for State {
 }
 
 impl State {
-    pub fn from_delta(delta: &Vec2) -> Option<Self> {
+    pub fn from_delta(delta: Vec2) -> Option<Self> {
         if delta.x == 0.0 && delta.y == 0.0 {
             return None;
         }

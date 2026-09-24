@@ -39,7 +39,7 @@ fn test_kennel() {
                         creature.id,
                         other.id,
                         creature.radius + other.radius
-                            - (&creature.position - &other.position).norm(),
+                            - (creature.position - other.position).norm(),
                         creature.position,
                         other.position
                     );

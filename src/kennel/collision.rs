@@ -154,7 +154,7 @@ fn stopped_step_collision_time(
     // the rest of the step, starting from the point of the collision in question
     let remainder = Step::new(
         step.lerp(stop_time).resolve(),
-        (1.0 - stop_time) * &step.delta,
+        (1.0 - stop_time) * step.delta,
     );
 
     // check if that remainder collides with the stopped step
@@ -188,7 +188,7 @@ mod tests {
             .resolve()
             .position;
 
-        let diff = (&actual_position - &expected_position).squared_norm();
+        let diff = (actual_position - expected_position).squared_norm();
         assert!(diff < DISTANCE_TOLERANCE);
     }
 
@@ -225,7 +225,7 @@ mod tests {
             .resolve();
 
         let distance =
-            (&resolved_collidable1.position - &resolved_collidable2.position).squared_norm();
+            (resolved_collidable1.position - resolved_collidable2.position).squared_norm();
 
         assert!(!resolved_collidable1.is_colliding(&resolved_collidable2));
         assert!(distance < 2.0 * (radius + DISTANCE_TOLERANCE));
@@ -276,7 +276,7 @@ mod tests {
         assert!(!stationary_collidable.is_colliding(&resolved_collidable2));
 
         let distance =
-            (&resolved_collidable1.position - &resolved_collidable2.position).squared_norm();
+            (resolved_collidable1.position - resolved_collidable2.position).squared_norm();
         assert!(distance < 4.0 * (radius + DISTANCE_TOLERANCE));
     }
 
