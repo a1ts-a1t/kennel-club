@@ -1,6 +1,7 @@
 use crate::{math::Vec2, physics::collidable::Collidable};
 
 #[derive(Clone, Debug)]
+#[deprecated]
 pub struct Step {
     pub collidable: Collidable,
     pub delta: Vec2,

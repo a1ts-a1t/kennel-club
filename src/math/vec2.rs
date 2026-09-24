@@ -6,7 +6,7 @@ use std::{
 use rand::Rng;
 use serde::Serialize;
 
-#[derive(Clone, Copy, Debug, Serialize)]
+#[derive(Clone, Copy, Debug, Serialize, PartialEq)]
 pub struct Vec2 {
     pub x: f64,
     pub y: f64,
