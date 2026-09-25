@@ -10,13 +10,26 @@ const RNG_SEED: u64 = 1;
 fn test_kennel() {
     const STEP_COUNT: usize = 5_000;
     const SEED_COUNT: u64 = 16;
+    // regression (freeze-lock): pairs that come into contact used to
+    // lock up, taking zero-length steps forever. a fully-frozen tick
+    // streak can only come from every creature being idle or asleep at
+    // once; healthy runs stay well under this bound, a lockup runs for
+    // hundreds of ticks
+    const MAX_FROZEN_STREAK: usize = 64;
 
     for seed in 0..SEED_COUNT {
         let mut rng = SmallRng::seed_from_u64(seed);
         let dir = PathBuf::from("./data");
         let mut kennel = Kennel::load(&dir, &mut rng).expect("Error during kennel initialization");
+        let mut frozen_streak = 0;
 
         for step in 0..STEP_COUNT {
+            let before: Vec<(f64, f64)> = kennel
+                .creatures()
+                .iter()
+                .map(|creature| (creature.position.x, creature.position.y))
+                .collect();
+
             kennel = kennel
                 .next(&mut rng)
                 .expect("Error during kennel iteration");
@@ -45,6 +58,17 @@ fn test_kennel() {
                     );
                 }
             }
+
+            let any_moved = kennel
+                .creatures()
+                .iter()
+                .zip(before)
+                .any(|(creature, position)| (creature.position.x, creature.position.y) != position);
+            frozen_streak = if any_moved { 0 } else { frozen_streak + 1 };
+            assert!(
+                frozen_streak <= MAX_FROZEN_STREAK,
+                "seed {seed} froze for {frozen_streak} ticks (up to step {step})"
+            );
         }
     }
 }

@@ -80,5 +80,47 @@ impl Arena {
 
 #[cfg(test)]
 mod tests {
-    // TODO
+    use super::*;
+    use crate::creature::Metadata;
+    use crate::physics::signed_distance;
+
+    #[test]
+    fn overlapping_creatures_resolve() {
+        let creatures: Vec<_> = (0..3)
+            .map(|_| {
+                let mut creature: crate::creature::Creature = Metadata::mock(0.05).into();
+                creature.position = Vec2::new(0.5, 0.5);
+                creature
+            })
+            .collect();
+
+        let mut arena = Arena::new(Vec2::new(0.5, 0.5));
+        for creature in &creatures {
+            arena.add(creature);
+        }
+
+        let bodies = arena
+            .into_vec()
+            .expect("arena must resolve overlapping creatures");
+        assert_eq!(bodies.len(), 3);
+
+        for (i, a) in bodies.iter().enumerate() {
+            let (p, r) = match a.collider() {
+                Collider::Circle { center, radius } => (center, radius),
+                other => panic!("creature {i} came back as {other:?}"),
+            };
+            assert!(
+                p.x >= r && p.x <= 1.0 - r && p.y >= r && p.y <= 1.0 - r,
+                "creature {i} escaped at ({}, {})",
+                p.x,
+                p.y
+            );
+
+            for (j, b) in bodies.iter().enumerate().skip(i + 1) {
+                let gap = signed_distance(&a.collider(), &b.collider())
+                    .expect("gap must exist between circles");
+                assert!(gap > 0.0, "creatures {i} and {j} ended in contact");
+            }
+        }
+    }
 }

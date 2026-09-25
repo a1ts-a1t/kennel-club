@@ -11,7 +11,7 @@ impl Collider {
     pub fn new_plane(normal: Vec2, offset: f64) -> Self {
         Collider::HalfPlane {
             normal: normal.normalized(),
-            offset: offset,
+            offset,
         }
     }
 
@@ -80,10 +80,6 @@ impl Collider {
     }
 }
 
-pub fn union(a: Collider, b: Collider) -> Collider {
-    a.union(b)
-}
-
 /// inf(norm(p - q)) where
 /// p satisfies a.signed_distance(p) <= 0
 /// q satisfies b.signed_distance(q) <= 0
@@ -91,12 +87,12 @@ pub fn union(a: Collider, b: Collider) -> Collider {
 /// colliders
 pub fn signed_distance(a: &Collider, b: &Collider) -> Option<f64> {
     match (a, b) {
-        (Collider::Union(a, b), other @ _) | (other @ _, Collider::Union(a, b)) => Some(f64::min(
+        (Collider::Union(a, b), other) | (other, Collider::Union(a, b)) => Some(f64::min(
             signed_distance(a, other)?,
             signed_distance(b, other)?,
         )),
-        (Collider::Circle { center, radius }, other @ _)
-        | (other @ _, Collider::Circle { center, radius }) => {
+        (Collider::Circle { center, radius }, other)
+        | (other, Collider::Circle { center, radius }) => {
             Some(other.signed_distance(*center) - radius)
         }
         (
@@ -125,7 +121,7 @@ pub fn signed_distance(a: &Collider, b: &Collider) -> Option<f64> {
 /// evaluated at v = 0
 pub fn normal(a: &Collider, b: &Collider) -> Option<Vec2> {
     match (a, b) {
-        (Collider::Union(a, b), other @ _) => {
+        (Collider::Union(a, b), other) => {
             let sigma_a = signed_distance(a, other)?;
             let sigma_b = signed_distance(b, other)?;
 
@@ -135,7 +131,7 @@ pub fn normal(a: &Collider, b: &Collider) -> Option<Vec2> {
                 normal(b, other)
             }
         }
-        (other @ _, Collider::Union(a, b)) => {
+        (other, Collider::Union(a, b)) => {
             let sigma_a = signed_distance(a, other)?;
             let sigma_b = signed_distance(b, other)?;
 
@@ -164,6 +160,6 @@ pub fn normal(a: &Collider, b: &Collider) -> Option<Vec2> {
         (hp @ Collider::HalfPlane { .. }, Collider::Circle { center, radius: _ }) => {
             Some(-hp.normal(*center))
         }
-        (Collider::Circle { center, radius: _ }, other @ _) => Some(other.normal(*center)),
+        (Collider::Circle { center, radius: _ }, other) => Some(other.normal(*center)),
     }
 }
