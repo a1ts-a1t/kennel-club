@@ -11,7 +11,7 @@ use termion::terminal_size;
 use crate::creature::{self, Creature};
 use crate::kennel::collision::Arena;
 use crate::math::Vec2;
-use crate::physics::Collidable;
+use crate::physics::{Collider, signed_distance};
 use crate::{Sprite, sprite};
 
 mod collision;
@@ -53,26 +53,27 @@ impl Kennel {
                 ));
             }
 
-            let random_collidable = |_| {
+            let random_collider = |_| {
                 let position = Vec2::new(
                     rng.random_range(f64::next_up(radius)..(1.0 - radius)),
                     rng.random_range(f64::next_up(radius)..(1.0 - radius)),
                 );
-                Collidable::new(position, radius)
+                Collider::new_circle(position, radius)
             };
 
-            let is_not_colliding = |collidable: &Collidable| {
-                !repositioned_creatures
-                    .iter()
-                    .any(|creature| collidable.is_colliding(&creature.as_collidable()))
+            let is_not_colliding = |collider: &Collider| {
+                !repositioned_creatures.iter().any(|creature| {
+                    signed_distance(collider, &creature.as_collider()).unwrap() <= 0f64
+                })
             };
 
             let repositioned_collidable = (0..MAX_INITIALIZATION_RETRIES)
-                .map(random_collidable)
+                .map(random_collider)
                 .find(is_not_colliding);
 
             match repositioned_collidable {
-                Some(c) => repositioned_creatures.push(current_creature.set_position(c.position)),
+                Some(c) => repositioned_creatures
+                    .push(current_creature.set_position(c.centroid().unwrap())),
                 None => {
                     return Err(format!(
                         "Unable to position creature {}",
@@ -252,6 +253,7 @@ impl Kennel {
 mod tests {
     use super::*;
     use crate::creature::Metadata;
+    use crate::physics::{Collider, signed_distance};
     use rand::{SeedableRng, rngs::SmallRng};
 
     const RNG_SEED: u64 = 1;
@@ -273,20 +275,16 @@ mod tests {
             .collect();
 
         let kennel = Kennel::new(metadata, &mut rng).unwrap();
-        let collidable_combinations = kennel
+        let colliders: Vec<_> = kennel
             .creatures
-            .into_iter()
-            .map(|creature| creature.as_collidable())
-            .combinations(2);
+            .iter()
+            .map(|creature| Collider::new_circle(creature.position, creature.radius))
+            .collect();
 
-        for collidable_combination in collidable_combinations {
-            let (c1, c2) = (
-                collidable_combination.first().unwrap(),
-                collidable_combination.get(1).unwrap(),
-            );
-            if c1.is_colliding(c2) {
-                panic!("Pairwise collision found during initialization");
-            }
+        for combination in colliders.iter().combinations(2) {
+            let gap = signed_distance(combination[0], combination[1])
+                .expect("gap must exist between circles");
+            assert!(gap > 0.0, "Pairwise collision found during initialization");
         }
     }
 
@@ -301,27 +299,31 @@ mod tests {
 
         for _ in 0..2000 {
             kennel = kennel.next(&mut rng).unwrap();
-            let collidables: Vec<_> = kennel
-                .creatures
-                .iter()
-                .map(|creature| creature.as_collidable())
-                .collect();
+            let creatures = kennel.creatures();
 
-            for collidable in &collidables {
+            for creature in &creatures {
+                let (x, y, r) = (creature.position.x, creature.position.y, creature.radius);
                 assert!(
-                    !collidable.is_out_of_unit_bounds(),
-                    "creature escaped the kennel: {:?}",
-                    collidable.position
+                    x >= r && x <= 1.0 - r && y >= r && y <= 1.0 - r,
+                    "creature {} escaped the kennel at ({x}, {y})",
+                    creature.id
                 );
             }
-            for combination in collidables.iter().combinations(2) {
-                let (c1, c2) = (combination[0], combination[1]);
-                assert!(
-                    !c1.is_colliding(c2),
-                    "creatures overlapped: {:?} vs {:?}",
-                    c1.position,
-                    c2.position
-                );
+
+            for (i, creature) in creatures.iter().enumerate() {
+                let collider = Collider::new_circle(creature.position, creature.radius);
+                for other in creatures.iter().skip(i + 1) {
+                    let other_collider = Collider::new_circle(other.position, other.radius);
+                    let gap = signed_distance(&collider, &other_collider)
+                        .expect("gap must exist between circles");
+                    assert!(
+                        gap > 0.0,
+                        "creatures {} and {} overlapped by {:.6}",
+                        creature.id,
+                        other.id,
+                        -gap
+                    );
+                }
             }
         }
     }

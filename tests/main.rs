@@ -1,7 +1,7 @@
 use std::{fs::File, io::Write, path::PathBuf};
 
 use image::ImageFormat;
-use kennel_club::Kennel;
+use kennel_club::{Collider, Kennel, signed_distance};
 use rand::{SeedableRng, rngs::SmallRng};
 
 const RNG_SEED: u64 = 1;
@@ -35,24 +35,27 @@ fn test_kennel() {
                 .expect("Error during kennel iteration");
 
             let creatures = kennel.creatures();
-            for (i, creature) in creatures.iter().enumerate() {
-                let collidable = creature.as_collidable();
+            for creature in &creatures {
+                let (x, y, r) = (creature.position.x, creature.position.y, creature.radius);
                 assert!(
-                    !collidable.is_out_of_unit_bounds(),
-                    "seed {seed} step {step}: {} escaped the kennel at {:?}",
-                    creature.id,
-                    creature.position
+                    x >= r && x <= 1.0 - r && y >= r && y <= 1.0 - r,
+                    "seed {seed} step {step}: {} escaped the kennel at ({x}, {y})",
+                    creature.id
                 );
+            }
 
+            for (i, creature) in creatures.iter().enumerate() {
+                let collider = Collider::new_circle(creature.position, creature.radius);
                 for other in creatures.iter().skip(i + 1) {
-                    let other_collidable = other.as_collidable();
+                    let other_collider = Collider::new_circle(other.position, other.radius);
+                    let gap = signed_distance(&collider, &other_collider)
+                        .expect("gap must exist between circles");
                     assert!(
-                        !collidable.is_colliding(&other_collidable),
+                        gap > 0.0,
                         "seed {seed} step {step}: {} and {} overlapped by {:.6} at {:?} vs {:?}",
                         creature.id,
                         other.id,
-                        creature.radius + other.radius
-                            - (creature.position - other.position).norm(),
+                        -gap,
                         creature.position,
                         other.position
                     );

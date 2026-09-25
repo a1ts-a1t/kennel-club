@@ -4,9 +4,9 @@ pub use metadata::Metadata;
 use rand::Rng;
 pub use state::State;
 
+use crate::math::Vec2;
 use crate::physics::{Body, Collider};
 use crate::{Sprite, sprite};
-use crate::{math::Vec2, physics::Collidable};
 
 mod metadata;
 mod state;
@@ -125,6 +125,10 @@ impl Creature {
         }
     }
 
+    pub fn as_collider(&self) -> Collider {
+        Collider::new_circle(self.position, self.radius)
+    }
+
     pub fn as_body(&self, center_of_mass: Vec2) -> Body {
         let velocity = match self.creature_state {
             State::Follow => (center_of_mass - self.position).with_norm(self.step_size),
@@ -137,10 +141,6 @@ impl Creature {
         Body::new(collider)
             .with_velocity(velocity)
             .with_mass(self.radius)
-    }
-
-    pub fn as_collidable(&self) -> Collidable {
-        Collidable::new(self.position, self.radius)
     }
 
     pub fn sprite(&self) -> &Sprite {
