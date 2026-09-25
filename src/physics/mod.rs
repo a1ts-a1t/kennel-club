@@ -1,4 +1,6 @@
+pub use body::{Body, step};
 pub use collidable::Collidable;
+pub use collider::Collider;
 pub use step::Step;
 
 #[cfg(test)]

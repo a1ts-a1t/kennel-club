@@ -4,7 +4,8 @@ use crate::{
 };
 
 const DISTANCE_TOLERANCE: f64 = 1e-12;
-const MAX_PASSES: usize = 64;
+const LINEAR_SLOP: f64 = 1e-15;
+const MAX_PASSES: usize = 256;
 
 #[derive(Clone, Debug)]
 pub struct Body {
@@ -26,15 +27,46 @@ impl Body {
         let delta = t * self.velocity;
         self.collider = self.collider.translate(delta);
     }
+
+    pub fn new(collider: Collider) -> Self {
+        Body {
+            collider,
+            velocity: Vec2::zero(),
+            inverse_mass: 0f64,
+        }
+    }
+
+    pub fn with_velocity(self, v: Vec2) -> Self {
+        Body {
+            collider: self.collider,
+            velocity: v,
+            inverse_mass: self.inverse_mass,
+        }
+    }
+
+    pub fn with_mass(self, m: f64) -> Self {
+        Body {
+            collider: self.collider,
+            velocity: self.velocity,
+            inverse_mass: 1f64 / m,
+        }
+    }
+
+    pub fn velocity(&self) -> Vec2 {
+        self.velocity
+    }
+
+    pub fn collider(&self) -> Collider {
+        self.collider.clone()
+    }
 }
 
 /// given an array of bodies, take one time step
 /// with them and return the resultant, decolided bodies
 /// in the same order as was given
 /// resultant bodies will have stepped positions and the same inverse mass
-pub fn step(bodies: &[Body]) -> Result<Vec<Body>, ()> {
-    // TODO: number of substeps can be dynamically solved for
-    let k = 64; // number of substeps
+pub fn step(bodies: &[Body], k: Option<usize>) -> Result<Vec<Body>, ()> {
+    let k = k.unwrap_or(8);
 
     let mut substeps: Vec<Body> = bodies.iter().cloned().collect();
 
@@ -108,7 +140,7 @@ fn resolve_positions(a: &mut Body, b: &mut Body) -> Result<bool, ()> {
     let d = signed_distance(&a.collider, &b.collider).ok_or(())?;
 
     // the bodies are neither inside each other or touching
-    if d >= DISTANCE_TOLERANCE {
+    if d > LINEAR_SLOP {
         return Ok(false);
     }
 

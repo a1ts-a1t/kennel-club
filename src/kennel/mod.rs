@@ -120,15 +120,14 @@ impl Kennel {
             .map(|creature| creature.with_next_state(rng))
             .collect();
 
-        let mut arena: Arena = Arena::new();
+        let mut arena: Arena = Arena::new(center_of_mass);
         for creature in new_creatures.iter() {
-            let step = creature.get_next_step(center_of_mass);
-            arena.add(step);
+            arena.add(creature);
         }
 
-        let steps = arena.into_vec();
+        let steps = arena.into_vec()?;
         let repositioned_creatures: Vec<_> = zip(new_creatures, steps)
-            .map(|(creature, step)| creature.step(step))
+            .map(|(creature, step)| creature.resolve_body(step))
             .collect();
 
         Ok(Kennel {

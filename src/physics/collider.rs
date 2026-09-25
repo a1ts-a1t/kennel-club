@@ -70,6 +70,14 @@ impl Collider {
             Collider::Union(a, b) => a.translate(p).union(b.translate(p)),
         }
     }
+
+    pub fn centroid(&self) -> Option<Vec2> {
+        match self {
+            Collider::HalfPlane { .. } => None, // infinite size
+            Collider::Circle { center, radius: _ } => Some(*center),
+            Collider::Union(_, _) => None, // TODO
+        }
+    }
 }
 
 pub fn union(a: Collider, b: Collider) -> Collider {
