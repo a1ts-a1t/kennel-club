@@ -6,7 +6,7 @@ use std::{
 use rand::Rng;
 use serde::Serialize;
 
-#[derive(Clone, Copy, Debug, Serialize)]
+#[derive(Clone, Copy, Debug, Serialize, PartialEq)]
 pub struct Vec2 {
     pub x: f64,
     pub y: f64,
@@ -32,17 +32,6 @@ impl Neg for Vec2 {
     }
 }
 
-impl Add for &Vec2 {
-    type Output = Vec2;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        Vec2 {
-            x: self.x + rhs.x,
-            y: self.y + rhs.y,
-        }
-    }
-}
-
 impl Add for Vec2 {
     type Output = Vec2;
 
@@ -54,7 +43,7 @@ impl Add for Vec2 {
     }
 }
 
-impl Sub for &Vec2 {
+impl Sub for Vec2 {
     type Output = Vec2;
 
     fn sub(self, rhs: Self) -> Self::Output {
@@ -65,18 +54,18 @@ impl Sub for &Vec2 {
     }
 }
 
-impl Sub<&f64> for Vec2 {
+impl Sub<f64> for Vec2 {
     type Output = Vec2;
 
-    fn sub(self, rhs: &f64) -> Self::Output {
-        &self - &Vec2::new(*rhs, *rhs)
+    fn sub(self, rhs: f64) -> Self::Output {
+        self - Vec2::new(rhs, rhs)
     }
 }
 
-impl Mul<&Vec2> for f64 {
+impl Mul<Vec2> for f64 {
     type Output = Vec2;
 
-    fn mul(self, rhs: &Vec2) -> Self::Output {
+    fn mul(self, rhs: Vec2) -> Self::Output {
         Vec2 {
             x: self * rhs.x,
             y: self * rhs.y,
@@ -84,18 +73,7 @@ impl Mul<&Vec2> for f64 {
     }
 }
 
-impl Mul<&Vec2> for &f64 {
-    type Output = Vec2;
-
-    fn mul(self, rhs: &Vec2) -> Self::Output {
-        Vec2 {
-            x: self * rhs.x,
-            y: self * rhs.y,
-        }
-    }
-}
-
-impl Div<f64> for &Vec2 {
+impl Div<f64> for Vec2 {
     type Output = Vec2;
 
     fn div(self, rhs: f64) -> Self::Output {
@@ -111,11 +89,11 @@ impl Vec2 {
         Vec2 { x, y }
     }
 
-    pub fn squared_norm(&self) -> f64 {
+    pub fn squared_norm(self) -> f64 {
         self.x * self.x + self.y * self.y
     }
 
-    pub fn norm(&self) -> f64 {
+    pub fn norm(self) -> f64 {
         self.squared_norm().sqrt()
     }
 
@@ -123,17 +101,17 @@ impl Vec2 {
         Vec2 { x: 0.0, y: 0.0 }
     }
 
-    pub fn normalized(&self) -> Self {
+    pub fn normalized(self) -> Self {
         let magnitude = self.squared_norm().sqrt();
         self / magnitude
     }
 
-    pub fn with_norm(&self, norm: f64) -> Self {
+    pub fn with_norm(self, norm: f64) -> Self {
         let scale = norm / self.squared_norm().sqrt();
         scale * self
     }
 
-    pub fn dot(v1: &Self, v2: &Self) -> f64 {
+    pub fn dot(v1: Self, v2: Self) -> f64 {
         v1.x * v2.x + v1.y * v2.y
     }
 

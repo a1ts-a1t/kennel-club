@@ -4,9 +4,9 @@ pub use metadata::Metadata;
 use rand::Rng;
 pub use state::State;
 
-use crate::physics::Step;
+use crate::math::Vec2;
+use crate::physics::{Body, Collider};
 use crate::{Sprite, sprite};
-use crate::{math::Vec2, physics::Collidable};
 
 mod metadata;
 mod state;
@@ -80,10 +80,8 @@ impl Creature {
         }
     }
 
-    /// Has the creature take a step in the direction.
-    /// Changes the sprite.
-    pub fn step(self, step: Step) -> Self {
-        let new_sprite_state = match sprite::State::from_delta(&step.delta) {
+    pub fn resolve_body(self, body: Body) -> Self {
+        let new_sprite_state = match sprite::State::from_delta(body.velocity()) {
             Some(s) => s,
             None if self.creature_state == State::Sleep => sprite::State::Sleep,
             None => sprite::State::Idle,
@@ -96,7 +94,7 @@ impl Creature {
             (self.sprite_frame + 1) % frame_count
         };
 
-        let new_position = step.resolve().position;
+        let new_position = body.collider().centroid().unwrap();
         Creature {
             id: self.id,
             display_name: self.display_name,
@@ -127,24 +125,22 @@ impl Creature {
         }
     }
 
-    /// Calculates the next step given the creature's position
-    /// and a center of mass to trend toward.
-    pub fn get_next_step(&self, center_of_mass: &Vec2) -> Step {
-        match self.creature_state {
-            State::Follow => {
-                let delta = center_of_mass - &self.position;
-                Step::new(self.as_collidable(), delta.with_norm(self.step_size))
-            }
-            State::Flee => {
-                let delta = &self.position - center_of_mass;
-                Step::new(self.as_collidable(), delta.with_norm(self.step_size))
-            }
-            _ => Step::new(self.as_collidable(), Vec2::zero()),
-        }
+    pub fn as_collider(&self) -> Collider {
+        Collider::new_circle(self.position, self.radius)
     }
 
-    pub fn as_collidable(&self) -> Collidable {
-        Collidable::new(self.position, self.radius)
+    pub fn as_body(&self, center_of_mass: Vec2) -> Body {
+        let velocity = match self.creature_state {
+            State::Follow => (center_of_mass - self.position).with_norm(self.step_size),
+            State::Flee => (self.position - center_of_mass).with_norm(self.step_size),
+            _ => Vec2::zero(),
+        };
+
+        let collider = Collider::new_circle(self.position, self.radius);
+
+        Body::new(collider)
+            .with_velocity(velocity)
+            .with_mass(self.radius)
     }
 
     pub fn sprite(&self) -> &Sprite {

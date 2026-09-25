@@ -1,8 +1,5 @@
-pub use collidable::Collidable;
-pub use step::Step;
+pub use body::{Body, step};
+pub use collider::{Collider, normal, signed_distance};
 
-#[cfg(test)]
-pub use step::DISTANCE_TOLERANCE;
-
-mod collidable;
-mod step;
+mod body;
+mod collider;

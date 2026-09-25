@@ -1,5 +1,6 @@
 pub use image::ImageFormat;
 pub use kennel::Kennel;
+pub use physics::{Collider, signed_distance};
 pub use rand;
 pub use sprite::{Sprite, State};
 
