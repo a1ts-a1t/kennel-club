@@ -17,4 +17,5 @@ hooks = [
     { id = "cargo-check", name = "cargo check", entry = "cargo check", language = "system", pass_filenames = false, always_run = true, require_serial = true },
     { id = "cargo-clippy", name = "cargo clippy", entry = "cargo clippy", language = "system", pass_filenames = false, always_run = true, require_serial = true, env = { RUSTFLAGS = "-Dwarnings" } },
     { id = "cargo-test", name = "cargo test", entry = "cargo test -- --skip test_kennel", language = "system", pass_filenames = false, always_run = true, require_serial = true },
+    { id = "check-metadata-schema", name = "check-jsonschema data/metadata.json", entry = "check-jsonschema --schemafile metadata_schema.json", language = "python", additional_dependencies = ["check-jsonschema==0.38.2"], files = "^data/metadata\\.json$" },
 ]
