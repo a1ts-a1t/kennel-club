@@ -3,7 +3,7 @@
         "id": "alt",
         "display_name": "alt!",
         "url": "https://alts-alt.online",
-        "step_size": 0.05,
+        "step_size": 0.02,
         "radius": 0.05,
         "sprites": {
             "idle": [
@@ -102,7 +102,7 @@
         "id": "stupidtwink",
         "display_name": "stupid twink",
         "url": "https://stupidtwinkcomics.com",
-        "step_size": 0.05,
+        "step_size": 0.02,
         "radius": 0.05,
         "sprites": {
             "idle": [
@@ -201,7 +201,7 @@
         "id": "juniper",
         "display_name": "juniper",
         "url": "https://eyes-like-fire.org",
-        "step_size": 0.05,
+        "step_size": 0.02,
         "radius": 0.05,
         "sprites": {
             "idle": [
@@ -300,7 +300,206 @@
         "id": "bxw",
         "display_name": "bxw",
         "url": "https://b-x-wu.github.io",
-        "step_size": 0.05,
+        "step_size": 0.02,
+        "radius": 0.05,
+        "sprites": {
+            "idle": [
+                "idle_01.png",
+                "idle_02.png",
+                "idle_03.png",
+                "idle_04.png",
+                "idle_05.png"
+            ],
+            "sleep": [
+                "sleep_01.png",
+                "sleep_02.png",
+                "sleep_03.png",
+                "sleep_04.png",
+                "sleep_05.png",
+                "sleep_06.png"
+            ],
+            "east": [
+                "running_right_01.png",
+                "running_right_02.png",
+                "running_right_03.png",
+                "running_right_04.png",
+                "running_right_05.png",
+                "running_right_06.png",
+                "running_right_07.png",
+                "running_right_08.png"
+            ],
+            "northeast": [
+                "jump_right_01.png",
+                "jump_right_02.png",
+                "jump_right_03.png",
+                "jump_right_04.png",
+                "jump_right_05.png",
+                "jump_right_06.png",
+                "jump_right_07.png",
+                "jump_right_08.png",
+                "jump_right_09.png",
+                "jump_right_10.png",
+                "jump_right_11.png"
+            ],
+            "north": [
+                "north.png"
+            ],
+            "northwest": [
+                "alt_jump_right_01.png",
+                "alt_jump_right_02.png",
+                "alt_jump_right_03.png",
+                "alt_jump_right_04.png",
+                "alt_jump_right_05.png",
+                "alt_jump_right_06.png",
+                "alt_jump_right_07.png",
+                "alt_jump_right_08.png",
+                "alt_jump_right_09.png",
+                "alt_jump_right_10.png",
+                "alt_jump_right_11.png"
+            ],
+            "west": [
+                "alt_jump_right_01.png",
+                "alt_jump_right_02.png",
+                "alt_jump_right_03.png",
+                "alt_jump_right_04.png",
+                "alt_jump_right_05.png",
+                "alt_jump_right_06.png",
+                "alt_jump_right_07.png",
+                "alt_jump_right_08.png",
+                "alt_jump_right_09.png",
+                "alt_jump_right_10.png",
+                "alt_jump_right_11.png"
+            ],
+            "southwest": [
+                "alt_running_right_01.png",
+                "alt_running_right_02.png",
+                "alt_running_right_03.png",
+                "alt_running_right_04.png",
+                "alt_running_right_05.png",
+                "alt_running_right_06.png",
+                "alt_running_right_07.png",
+                "alt_running_right_08.png"
+            ],
+            "south": [
+                "south.png"
+            ],
+            "southeast": [
+                "running_right_01.png",
+                "running_right_02.png",
+                "running_right_03.png",
+                "running_right_04.png",
+                "running_right_05.png",
+                "running_right_06.png",
+                "running_right_07.png",
+                "running_right_08.png"
+            ]
+        }
+    }
+,
+    {
+        "id": "kitty",
+        "display_name": "kitty",
+        "url": "https://catmod.ing/",
+        "step_size": 0.02,
+        "radius": 0.05,
+        "sprites": {
+            "idle": [
+                "idle_01.png",
+                "idle_02.png",
+                "idle_03.png",
+                "idle_04.png",
+                "idle_05.png"
+            ],
+            "sleep": [
+                "sleep_01.png",
+                "sleep_02.png",
+                "sleep_03.png",
+                "sleep_04.png",
+                "sleep_05.png",
+                "sleep_06.png"
+            ],
+            "east": [
+                "running_right_01.png",
+                "running_right_02.png",
+                "running_right_03.png",
+                "running_right_04.png",
+                "running_right_05.png",
+                "running_right_06.png",
+                "running_right_07.png",
+                "running_right_08.png"
+            ],
+            "northeast": [
+                "jump_right_01.png",
+                "jump_right_02.png",
+                "jump_right_03.png",
+                "jump_right_04.png",
+                "jump_right_05.png",
+                "jump_right_06.png",
+                "jump_right_07.png",
+                "jump_right_08.png",
+                "jump_right_09.png",
+                "jump_right_10.png",
+                "jump_right_11.png"
+            ],
+            "north": [
+                "north.png"
+            ],
+            "northwest": [
+                "alt_jump_right_01.png",
+                "alt_jump_right_02.png",
+                "alt_jump_right_03.png",
+                "alt_jump_right_04.png",
+                "alt_jump_right_05.png",
+                "alt_jump_right_06.png",
+                "alt_jump_right_07.png",
+                "alt_jump_right_08.png",
+                "alt_jump_right_09.png",
+                "alt_jump_right_10.png",
+                "alt_jump_right_11.png"
+            ],
+            "west": [
+                "alt_jump_right_01.png",
+                "alt_jump_right_02.png",
+                "alt_jump_right_03.png",
+                "alt_jump_right_04.png",
+                "alt_jump_right_05.png",
+                "alt_jump_right_06.png",
+                "alt_jump_right_07.png",
+                "alt_jump_right_08.png",
+                "alt_jump_right_09.png",
+                "alt_jump_right_10.png",
+                "alt_jump_right_11.png"
+            ],
+            "southwest": [
+                "alt_running_right_01.png",
+                "alt_running_right_02.png",
+                "alt_running_right_03.png",
+                "alt_running_right_04.png",
+                "alt_running_right_05.png",
+                "alt_running_right_06.png",
+                "alt_running_right_07.png",
+                "alt_running_right_08.png"
+            ],
+            "south": [
+                "south.png"
+            ],
+            "southeast": [
+                "running_right_01.png",
+                "running_right_02.png",
+                "running_right_03.png",
+                "running_right_04.png",
+                "running_right_05.png",
+                "running_right_06.png",
+                "running_right_07.png",
+                "running_right_08.png"
+            ]
+        }
+    },
+    {
+        "id": "t4tdotnet",
+        "display_name": "t4tdotnet",
+        "url": "https://t4t.net/",
+        "step_size": 0.02,
         "radius": 0.05,
         "sprites": {
             "idle": [
